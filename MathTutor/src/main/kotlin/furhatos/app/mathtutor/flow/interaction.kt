@@ -3,7 +3,7 @@ package furhatos.app.mathtutor.flow
 import furhatos.nlu.common.*
 import furhatos.flow.kotlin.*
 
-val Start : State = state(Interaction) {
+val Greeting : State = state(Interaction) {
 
     onEntry {
         furhat.ask("Hi there. Do you like robots?")
