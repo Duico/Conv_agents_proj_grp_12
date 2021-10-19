@@ -45,5 +45,5 @@ val Interaction: State = state {
 }
 
 enum class Operation {
-    ADDITION, SUBTRACTION, MULTIPLICATION, EQUATION
+    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION
 }
