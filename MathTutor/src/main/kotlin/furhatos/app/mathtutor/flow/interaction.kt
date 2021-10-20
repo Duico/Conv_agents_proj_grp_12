@@ -44,7 +44,7 @@ val GetOperation : State = state(Interaction) {
             furhat.ask("What math problem are you stuck on?")
         }
     onReentry {
-        furhat.ask("I did not understand that, try with something else.")
+        furhat.ask("I beg your pardon?.")
     }
 
     onResponse<OperationIntent> {
@@ -60,6 +60,12 @@ val GetOperation : State = state(Interaction) {
         }else{
             reentry()
         }
+    }
+    onResponse{
+        reentry()
+    }
+    onNoResponse {
+        reentry()
     }
 //
 //    onResponse<No>{
@@ -84,6 +90,11 @@ fun BriefExplanation(operation: Operation) = state(Interaction) {
     onEntry {
         val text = operation.toString()
         furhat.say("I'm going to explain: $text") // Kotlin string interpolation
+        when(operation){
+            Operation.ADDITION->{
+                furhat.say("Let me ask you a simple question from this topic to check your understanding")
+            }
+        }
         goto(GaugeBriefExplanation(operation))
     }
 }
@@ -92,7 +103,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
     var result = 0
     onEntry{
         val num1  = Random.nextInt(3,6)
-        val num2 = Random.nextInt(3,num1)
+        val num2 = Random.nextInt(2,num1)
         when(operation) {
             Operation.ADDITION -> {
                 result = num1 + num2
@@ -123,57 +134,72 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
         //furhat.say("You're answer is ${it.intent.text}")
         if(it.intent.value == result){
             val emotion = detectEmotion()
+            furhat.say("Good job! Let's try another problem then")
             if(emotion == "") {
                 //TODO: NEED TO IMPLEMENT EMOTION DETECTION
                 goto(MediumProblem(operation))
             }
         }
         else{
+            furhat.say("Hummmmm...")
+            furhat.say("Unfortunately, that's not the right answer. I think it'd be a good idea to understand the concept better")
             goto(DetailedExplanation(operation))
         }
+    }
+    onResponse{
+        furhat.say("Okay, let me try to explain the concept better")
+        goto(DetailedExplanation(operation))
     }
 }
 
 fun DetailedExplanation(operation: Operation) :State = state(Interaction){
     onEntry {
+        furhat.say("Let's make this an interactive learning experience.")
+        delay(1000)
         val num1 = Random.nextInt(2, 5)
         print(num1)
-        val num2 = Random.nextInt(2, num1)
+        val num2 = Random.nextInt(1, num1)
         val num3 = Random.nextInt(1, 5)
         val limit = 10 / num3
 
         when (operation) {
             Operation.ADDITION -> {
+
                 random({ furhat.say("Okay, now I want you to show $num1 using your fingers") },
                     { furhat.say("Raise $num1 fingers") }
                 )
-                delay(500)
+                delay(1000)
                 random(
                     { furhat.say("Now raise $num2 more") }
                 )
-                delay(500)
-                furhat.say("Count the number of fingers now")
                 delay(1000)
-                furhat.say("Now you should have $num1+$num2 fingers. Easy")
+                furhat.say("Let's count the number of fingers now")
+                delay(4000)
+                furhat.say("You have..")
+                for( i in 1..num1+num2){
+                    furhat.say(i.toString())
+                    delay(500)
+                }
+                furhat.say("Which gives us the answer of ${num1+num2} fingers. Easy")
             }
             Operation.SUBTRACTION -> {
                 random({ furhat.say("Okay, now I want you to show $num1 using your fingers") },
                     { furhat.say("Raise $num1 fingers") }
                 )
-                delay(500)
+                delay(1000)
                 random(
                     { furhat.say("Now close $num2 of them") }
                 )
-                delay(500)
-                furhat.say("Count the number of fingers now")
                 delay(1000)
-                furhat.say("Now you should have $num1-$num2 fingers. Easy")
+                furhat.say("Count the number of fingers now")
+                delay(4000)
+                furhat.say("Now you should have ${num1-num2} fingers. Easy")
             }
             Operation.MULTIPLICATION -> {
                 random({ furhat.say("Okay, now I want you to show $num3 using your fingers") },
                     { furhat.say("Raise $num3 fingers") }
                 )
-                delay(500)
+                delay(1000)
                 furhat.say("What you have is $num3 times 1")
                 for (i in 2..limit) {
                     random({ furhat.say("Raise $num3 more fingers") },
@@ -201,6 +227,8 @@ fun GaugeDetailedExplanation(operation:Operation) = state(Interaction){
             goto(DetailedExplanation(operation))
         }
         else{
+            furhat.say("Okay. Let's try another problem")
+            delay(1000)
             goto(MediumProblem(operation))
         }
     }
@@ -244,6 +272,7 @@ fun MediumProblem(operation: Operation) = state(Interaction){
     }
     onResponse<Number>{
         if(it.intent.value == result){
+            furhat.say("Good job! That's correct. Let's look at a more challenging problem now.")
             goto(DifficultProblem(operation))
         }
         else{
@@ -267,7 +296,7 @@ fun DifficultProblem(operation:Operation) :State= state(Interaction){
             Operation.ADDITION->{
                 result = num1 + num2 + num3
                 random({furhat.ask("I have $num1 bananas, $num2 oranges, and $num3 apples. How many do I have in total?")},
-                    {furhat.ask("Suppose I have $num1 coins, you have $num2 coins. I then take all of your coins and a robber then steals all the coins I have. How many coins does the robber have now?")})
+                    {furhat.ask("Suppose I have $num1 coins, you have $num2 coins. I then take all of your coins and a robber who has $num3 coins already with him then steals all the coins I have. How many coins does the robber have now?")})
             }
             Operation.SUBTRACTION->{
                 result = num1-num2-num3
@@ -309,7 +338,7 @@ fun DifficultProblem(operation:Operation) :State= state(Interaction){
 fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Interaction){
     onEntry{
         random({furhat.say("Let's see how we should solve this problem")})
-        delay(500)
+        delay(1000)
         when(operation){
             Operation.ADDITION->{
                 furhat.say("The problem finally boils down to adding $num1 and $num2")
@@ -343,7 +372,7 @@ fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Inte
                 furhat.say("First draw $num1 tally marks in your notebook")
                 delay(2000)
                 furhat.say("Now we need to multiply this by $num2, which means we have to add $num1 more marks $num2 times")
-                delay(500)
+                delay(1000)
                 for(i in 1..num2){
                     if(i == 1){
                         furhat.say("So we already have $num1 times 1, which is $num1")
@@ -381,29 +410,29 @@ fun DifficultProblemSolution(operation: Operation,num1: Int,num2: Int,num3:Int) 
         when(operation){
             Operation.ADDITION->{
                 furhat.say("Now that you seem comfortable with the basics of addition, let's see how this can be broken down.Since there are 3 numbers to add, you first add $num1 and $num2")
-                delay(500)
+                delay(1000)
                 furhat.say("You should end up with a sum of ${num1+num2}")
-                delay(500)
+                delay(1000)
                 furhat.say("Now add $num3 to this result to get the final answer")
-                delay(500)
+                delay(1000)
                 furhat.say("And the answer is ${num1+num2+num3}")
             }
             Operation.SUBTRACTION->{
                 furhat.say("Now that you seem comfortable with the basics of subtraction, let's see how this can be broken down. You first subtract $num1 and $num2")
-                delay(500)
+                delay(1000)
                 furhat.say("You should end up with a difference of ${num1-num2}")
-                delay(500)
+                delay(1000)
                 furhat.say("Now subtract $num3 to this result to get the final answer")
-                delay(500)
+                delay(1000)
                 furhat.say("And the answer is ${num1-num2-num3}")
             }
             Operation.MULTIPLICATION->{
                 furhat.say("Now that you seem comfortable with the basics of multiplication, let's see how this can be broken down.Since there are 3 numbers to multiply, you first multiply $num1 and $num2")
-                delay(500)
+                delay(1000)
                 furhat.say("You should end up with a product of ${num1*num2}")
-                delay(500)
+                delay(1000)
                 furhat.say("Now multiply $num3 with this result to get the final answer")
-                delay(500)
+                delay(1000)
                 furhat.say("And the answer is ${num1*num2*num3}")
             }
             Operation.EQUATION->{
