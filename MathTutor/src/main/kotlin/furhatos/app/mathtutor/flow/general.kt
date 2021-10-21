@@ -3,13 +3,9 @@ package furhatos.app.mathtutor.flow
 import furhatos.app.mathtutor.gaze.Gaze
 import furhatos.app.mathtutor.gaze.getRandomLocation
 import furhatos.flow.kotlin.*
-<<<<<<< HEAD
 import furhatos.util.Gender
 import furhatos.util.Language
-=======
 import furhatos.records.Location
-import furhatos.util.*
->>>>>>> f2dc7f4 (Add interrupt state and enable interruptions)
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
