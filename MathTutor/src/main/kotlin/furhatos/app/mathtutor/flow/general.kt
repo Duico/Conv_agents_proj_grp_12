@@ -5,7 +5,6 @@ import furhatos.app.mathtutor.gaze.getRandomLocation
 import furhatos.flow.kotlin.*
 import furhatos.util.Gender
 import furhatos.util.Language
-import furhatos.records.Location
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
@@ -59,16 +58,20 @@ val Interaction: State = state {
     }
 
     onResponse(instant = true, cond = {it.interrupted}) {
-        goto(Interrupted)
+        parallel{
+            goto(Interrupted)
+        }
     }
+
 
 }
 
-fun GazeState(scenario: Gaze): State = state {
+val Interrupted: State = state {
     onEntry {
         var lookingAway = false
-        val sample = scenario.getRandomSample()
-
+        val sample = interruptionGaze.getRandomSample()
+        print(sample)
+        print("interrupted")
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
             for (gazeState in sample) {
                 if (!gazeState) { // Check if we should be looking away (!gazeState)
@@ -76,14 +79,16 @@ fun GazeState(scenario: Gaze): State = state {
                         // Get some random spot to look at
                         val absoluteLocation = getRandomLocation()
                         // Relative to the current user
-                        val relativeLocation = absoluteLocation.add(Location(users.current))
-                        furhat.attend(relativeLocation)
+                        println(absoluteLocation)
+
+                        //val relativeLocation = absoluteLocation.add(Location(users.current))
+                        furhat.attend(absoluteLocation)
                         lookingAway = true
                     }
                 } else {
                     furhat.attend(users.current)
                 }
-                delay(100) // Sample data is in 100ms buckets, so this loop should only run at that frequency
+                delay(10) // Sample data is in 100ms buckets, so this loop should only run at that frequency
             }
         }
     }
@@ -93,12 +98,36 @@ fun GazeState(scenario: Gaze): State = state {
     }
 }
 
-val Interrupted: State = state(GazeState(interruptionGaze)) {
+val StartTalking: State = state {
+    onEntry {
+        var lookingAway = false
+        val sample = startSpeakingGaze.getRandomSample()
 
-}
+        if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
+            for (gazeState in sample) {
+                if (!gazeState) { // Check if we should be looking away (!gazeState)
+                    if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
+                        // Get some random spot to look at
+                        val absoluteLocation = getRandomLocation()
+                        // Relative to the current user
+                        //val relativeLocation = absoluteLocation.add(Location(users.current))
+                        print("start talking")
+                        print(users.current.fields)
 
-val StartTalking: State = state(GazeState(startSpeakingGaze)) {
+                        furhat.attend(absoluteLocation)
+                        lookingAway = true
+                    }
+                } else {
+                    furhat.attend(users.current)
+                }
+                delay(10) // Sample data is in 100ms buckets, so this loop should only run at that frequency
+            }
+        }
+    }
 
+    onExit {
+        furhat.attend(users.current)
+    }
 }
 
 enum class Operation {
