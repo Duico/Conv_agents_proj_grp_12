@@ -1,25 +1,38 @@
 package furhatos.app.mathtutor.flow
 
-import furhatos.app.mathtutor.nlu.OperationIntent
+import furhatos.app.mathtutor.nlu.*
 import furhatos.nlu.common.*
 import furhatos.flow.kotlin.*
 import furhatos.nlu.Intent
 import furhatos.nlu.common.Number
-import furhatos.skills.UserManager.random
-import org.junit.Test
+import java.util.*
+import javax.xml.soap.Detail
 import kotlin.random.Random
 
+var learntAdd = 0
+var learntSubt = 0
+var learntMul = 0
+var learntDiv=0
+var prevOp = Operation.EMPTY
+var entryTime = 0
 fun detectEmotion(): String {
     return ""
 }
 
 fun timeLeft():Boolean {
-    return true
+    var currTime = Calendar.MINUTE
+    if(currTime - entryTime >= 3) {
+        return false
+    }
+    else{
+        return true
+    }
 }
 
 val Greeting : State = state(Interaction) {
 
     onEntry {
+        entryTime = Calendar.MINUTE
         furhat.ask("Hello. I'm MathTutor, your AI math teacher.")
     }
 
@@ -28,9 +41,9 @@ val Greeting : State = state(Interaction) {
         random(
                 {afterGreetingUtterance = ""},
                 {afterGreetingUtterance = "Let's start!"},
-                {afterGreetingUtterance = "Let's start(1)"},
-                {afterGreetingUtterance = "Let's start(2)"},
-                {afterGreetingUtterance = "Let's start(3)"}
+                {afterGreetingUtterance = "Let's begin!"},
+                {afterGreetingUtterance = "Alright, let's start!"},
+                {afterGreetingUtterance = "Cool, let's get started!"}
         )
         furhat.say(afterGreetingUtterance)
         goto(GetOperation)
@@ -56,12 +69,48 @@ val GetOperation : State = state(Interaction) {
                 if(op == null ){
                     reentry()
                 }else {
+                    if(prevOp == op){
+                        furhat.say("Well, you just finished that topic, but it's okay if you wan't to go over it again!")
+                    }
+                    prevOp = op
                     goto(BriefExplanation(op))
                 }
             }
         }else{
             reentry()
         }
+    }
+    onResponse<AddingProblem>{
+        val op = Operation.ADDITION
+        if(prevOp == op){
+            furhat.say("Well, you just finished that topic, but it's okay if you wan't to go over it again!")
+        }
+        prevOp = op
+        goto(BriefExplanation(op))
+    }
+    onResponse<SubtractionProblem>{
+        val op = Operation.SUBTRACTION
+        if(prevOp == op){
+            furhat.say("Well, you just finished that topic, but it's okay if you wan't to go over it again!")
+        }
+        prevOp = op
+        goto(BriefExplanation(op))
+    }
+    onResponse<MultiplicationProblem>{
+        val op = Operation.MULTIPLICATION
+        if(prevOp == op){
+            furhat.say("Well, you just finished that topic, but it's okay if you wan't to go over it again!")
+        }
+        prevOp = op
+        goto(BriefExplanation(op))
+    }
+    onResponse<DivisionProblem>{
+        val op = Operation.DIVISION
+        if(prevOp == op){
+            furhat.say("Well, you just finished that topic, but it's okay if you wan't to go over it again!")
+        }
+        prevOp = op
+        goto(BriefExplanation(op))
     }
     onResponse{
         reentry()
@@ -92,20 +141,23 @@ fun BriefExplanation(operation: Operation) = state(Interaction) {
     onEntry {
         val text = operation.toString()
         furhat.say("I'm going to explain: $text") // Kotlin string interpolation
-        when(operation){
-            Operation.ADDITION->{
-                furhat.say("Let me ask you a simple question from this topic to check your understanding")
-            }
-        }
+
+        furhat.say("But before I begin, let me ask you a simple question from this topic to check your understanding")
+
         goto(GaugeBriefExplanation(operation))
     }
 }
 
 fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
     var result = 0
+    var num1 = 0
+    var num2 = 0
     onEntry{
-        val num1  = Random.nextInt(3,6)
-        val num2 = Random.nextInt(2,num1)
+        if(num1 == 0 && num2 == 0){
+            num1  = Random.nextInt(3,6)
+            num2 = Random.nextInt(2,num1)
+        }
+
         when(operation) {
             Operation.ADDITION -> {
                 result = num1 + num2
@@ -122,10 +174,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
                 random({furhat.ask("So if I had a basket with$num1 apples, and I buy $num2 such baskets, how many do I have now?")}
                 )
             }
-            Operation.EQUATION->{
-
-            }
-            Operation.DIVISION->{
+            else->{
 
             }
 
@@ -148,6 +197,9 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
             goto(DetailedExplanation(operation))
         }
     }
+    onResponse<RepeatQuestion>{
+        reentry()
+    }
     onResponse{
         furhat.say("Okay, let me try to explain the concept better")
         goto(DetailedExplanation(operation))
@@ -166,17 +218,18 @@ fun DetailedExplanation(operation: Operation) :State = state(Interaction){
 
         when (operation) {
             Operation.ADDITION -> {
-
+                random({furhat.say("To understand this concept better, let's take an example of adding $num1 and $num2")},{furhat.say("To get a grasp of the concept, let's see how to add $num1 and $num2")})
+                delay(1000)
                 random({ furhat.say("Okay, now I want you to show $num1 using your fingers") },
                     { furhat.say("Raise $num1 fingers") }
                 )
-                delay(1000)
+                delay(2000)
                 random(
                     { furhat.say("Now raise $num2 more") }
                 )
-                delay(1000)
+                delay(3000)
                 furhat.say("Let's count the number of fingers now")
-                delay(4000)
+                delay(2000)
                 furhat.say("You have..")
                 for( i in 1..num1+num2){
                     furhat.say(i.toString())
@@ -185,30 +238,38 @@ fun DetailedExplanation(operation: Operation) :State = state(Interaction){
                 furhat.say("Which gives us the answer of ${num1+num2} fingers. Easy")
             }
             Operation.SUBTRACTION -> {
+                random({furhat.say("To understand this concept better, let's take an example of subtract $num1 and $num2")},{furhat.say("To get a grasp of the concept, let's see how to subtract $num1 and $num2")})
+                delay(2000)
                 random({ furhat.say("Okay, now I want you to show $num1 using your fingers") },
                     { furhat.say("Raise $num1 fingers") }
                 )
+                delay(2000)
+                furhat.say("Let's count down from $num1 fingers to perform subtraction")
                 delay(1000)
-                random(
-                    { furhat.say("Now close $num2 of them") }
-                )
-                delay(1000)
+                for(i in num1-1 downTo num1-num2) {
+                    random(
+                        { furhat.say("after closing one more finger, we have $i") }
+                    )
+                    delay(1000)
+                }
                 furhat.say("Count the number of fingers now")
                 delay(4000)
                 furhat.say("Now you should have ${num1-num2} fingers. Easy")
+                delay(1000)
             }
             Operation.MULTIPLICATION -> {
+                random({furhat.say("To understand this concept better, let's take an example of multiplying $num1 and $num2")},{furhat.say("To get a grasp of the concept, let's see how to multiplying $num1 and $num2")})
                 random({ furhat.say("Okay, now I want you to show $num3 using your fingers") },
                     { furhat.say("Raise $num3 fingers") }
                 )
-                delay(1000)
+                delay(3000)
                 furhat.say("What you have is $num3 times 1")
                 for (i in 2..limit) {
-                    random({ furhat.say("Raise $num3 more fingers") },
+                    random({ furhat.say("Raise $num3 more ") },
                         { furhat.say("lift $num3 more ") },
                         { furhat.say("$num3 more") }
                     )
-                    delay(300)
+                    delay(1000)
                     random({ furhat.say("Now you got $num3 times $i") },
                         { furhat.say("This is $num3 times $i") }
                     )
@@ -243,31 +304,30 @@ fun MediumProblem(operation: Operation) = state(Interaction){
     var num1 = 0
     var num2 = 0
     onEntry{
-        num1 = Random.nextInt(2,5)
-        num2 = Random.nextInt(1,num1)
+        if(num1 == 0 && num2 == 0) {
+            num1 = Random.nextInt(2, 5)
+            num2 = Random.nextInt(1, num1)
+        }
         when(operation){
             Operation.ADDITION->{
                 result = num1 + num2
-                random({furhat.ask("If I have $num1 coins and then get $num2 more coins, how many do I finally have?")},
+                random({furhat.ask("If I have $num1 coins and then get $num2 more, how many do I finally have?")},
                     {furhat.ask("I have $num1 candies and you have $num2. Now I give you all of my candies, so how many will you end up with?")}
                 )
             }
             Operation.SUBTRACTION->{
                 result = num1 - num2
                 random({furhat.ask("So if I had $num1 apples, and I lose $num2 , how many do I have now?") },
-                    furhat.ask("I have $num2 apples, but I want $num1 apples, so how many more should I buy?")
+                    furhat.ask("I have $num2 apples, but I want $num1, so how many more should I buy?")
                 )
             }
             Operation.MULTIPLICATION->{
                 result  = num1 * num2
-                random({furhat.ask("So if I had a basket with$num1 apples, and I buy $num2 such baskets, how many do I have now?")},
+                random({furhat.ask("So if I had a basket with $num1 apples, and I buy $num2 such baskets, how many do I have now?")},
                     {furhat.ask("A box of chocolates at the store has $num1 pieces, and I buy $num2 boxes, chocolates do I have in total?")}
                 )
             }
-            Operation.EQUATION->{
-
-            }
-            Operation.DIVISION->{
+            else->{
 
             }
         }
@@ -281,6 +341,13 @@ fun MediumProblem(operation: Operation) = state(Interaction){
             goto(MediumProblemSolution(operation,num1,num2))
         }
     }
+    onResponse<RepeatQuestion>{
+        reentry()
+    }
+    onResponse{
+        goto(MediumProblemSolution(operation,num1,num2))
+    }
+
 }
 
 
@@ -315,11 +382,8 @@ fun DifficultProblem(operation:Operation) :State= state(Interaction){
                         { question = "A box of toffees has $num1 pieces. Each carton contains $num2 boxes, and a truck can carry $num3 cartons. How many tofees can a truck carry at most?" }
                 )
             }
-            Operation.EQUATION -> {
-                question = ""
-            }
-            Operation.DIVISION -> {
-                question = ""
+            else->{
+                question=""
             }
         }
     }
@@ -350,11 +414,17 @@ fun DifficultProblem(operation:Operation) :State= state(Interaction){
             }
         }
     }
+    onResponse<RepeatQuestion>{
+        reentry()
+    }
+    onResponse{
+        goto(DifficultProblemSolution(operation,num1, num2, num3))
+    }
 }
 
 fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Interaction){
     onEntry{
-        random({furhat.say("Let's see how we should solve this problem")})
+        random({furhat.say("Umm, no. Let's see how we should solve this problem")})
         delay(1000)
         when(operation){
             Operation.ADDITION->{
@@ -403,10 +473,7 @@ fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Inte
                     }
                 }
             }
-            Operation.EQUATION->{
-
-            }
-            Operation.DIVISION->{
+            else->{
 
             }
         }
@@ -452,10 +519,7 @@ fun DifficultProblemSolution(operation: Operation,num1: Int,num2: Int,num3:Int) 
                 delay(1000)
                 furhat.say("And the answer is ${num1*num2*num3}")
             }
-            Operation.EQUATION->{
-
-            }
-            Operation.DIVISION->{
+            else->{
 
             }
         }
@@ -464,10 +528,12 @@ fun DifficultProblemSolution(operation: Operation,num1: Int,num2: Int,num3:Int) 
 }
 
 fun EasyProblem(operation:Operation) :State = state(Interaction){
-    var num1: Int
+    var num1 = 0
     var result = 0
     onEntry{
-        num1 = Random.nextInt(1,2)
+        if(num1 == 0) {
+            num1 = Random.nextInt(1, 2)
+        }
         when(operation){
             Operation.ADDITION->{
                 result = num1 + num1
@@ -481,10 +547,7 @@ fun EasyProblem(operation:Operation) :State = state(Interaction){
                 result = num1
                 furhat.ask("If a box has 1 toffee and bought $num1 boxes, how many toffees would I have in total?")
             }
-            Operation.EQUATION->{
-
-            }
-            Operation.DIVISION->{
+            else->{
 
             }
         }
@@ -499,22 +562,52 @@ fun EasyProblem(operation:Operation) :State = state(Interaction){
             goto(DetailedExplanation(operation))
         }
     }
+    onResponse<RepeatQuestion> {
+        reentry()
+    }
+    onResponse{
+        goto(DetailedExplanation(operation))
+    }
 }
 
 val EvaluateConditions:State = state(Interaction){
     onEntry{
         var emotion = detectEmotion()
-        if(emotion == "fine"){
-            goto(GetOperation)
+        if(emotion == "" && timeLeft()){
+            furhat.ask("Looks like we still have some time left. Would you like to learn a new concept?")
+
         }
         else{
             goto(GiveHomework)
         }
     }
+    onResponse<Yes>{
+        when(prevOp){
+            Operation.ADDITION->{
+                learntAdd = 1
+            }
+            Operation.SUBTRACTION->{
+                learntSubt = 1
+            }
+            Operation.MULTIPLICATION->{
+                learntMul = 1
+            }
+            else->{
+
+            }
+        }
+        goto(GetOperation)
+    }
+    onResponse<No>{
+        furhat.ask("Haha, I'm sorry, but I can't let you leave class this early. Let's solve some more problems then")
+        goto(MediumProblem(prevOp))
+    }
 }
 
 val GiveHomework:State = state(Interaction){
     onEntry{
-        furhat.say("Go do your homework")
+        if(timeLeft()){
+            furhat.ask("Well done! Hope you enjoyed today's session!")
+        }
     }
 }
