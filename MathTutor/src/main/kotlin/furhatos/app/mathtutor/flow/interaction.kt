@@ -5,6 +5,8 @@ import furhatos.nlu.common.*
 import furhatos.flow.kotlin.*
 import furhatos.nlu.Intent
 import furhatos.nlu.common.Number
+import furhatos.skills.UserManager.random
+import org.junit.Test
 import kotlin.random.Random
 
 fun detectEmotion(): String {
@@ -128,7 +130,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
             }
 
         }
-        //TODO ADDING OPERATION EQUATION
+        //TODO ADD OPERATION EQUATION
     }
     onResponse<Number>{
         //furhat.say("You're answer is ${it.intent.text}")
@@ -287,39 +289,54 @@ fun DifficultProblem(operation:Operation) :State= state(Interaction){
     var num2 = 0
     var num3 = 0
     var result = 0
-    onEntry{
-        num1 = Random.nextInt(8,10)
-        num2 = Random.nextInt(1,4)
-        num3 = Random.nextInt(1,4)
+    var question: String? = null
+
+    fun generateQuestion(tr: FlowControlRunner) {
+        num1 = Random.nextInt(8, 10)
+        num2 = Random.nextInt(1, 4)
+        num3 = Random.nextInt(1, 4)
         result = 0
-        when(operation){
-            Operation.ADDITION->{
+        when (operation) {
+            Operation.ADDITION -> {
                 result = num1 + num2 + num3
-                random({furhat.ask("I have $num1 bananas, $num2 oranges, and $num3 apples. How many do I have in total?")},
-                    {furhat.ask("Suppose I have $num1 coins, you have $num2 coins. I then take all of your coins and a robber who has $num3 coins already with him then steals all the coins I have. How many coins does the robber have now?")})
+                tr.random({ question = "I have $num1 bananas, $num2 oranges, and $num3 apples. How many do I have in total?" },
+                        { question = "Suppose I have $num1 coins, you have $num2 coins. I then take all of your coins and a robber who has $num3 coins already with him then steals all the coins I have. How many coins does the robber have now?" })
             }
-            Operation.SUBTRACTION->{
-                result = num1-num2-num3
-                random(
-                    {furhat.ask("You have $num1 toffees. You give me $num2 of them and $num3 to another friend. How many do you have left?")}
+            Operation.SUBTRACTION -> {
+                result = num1 - num2 - num3
+                tr.random(
+                        { question = "You have $num1 toffees. You give me $num2 of them and $num3 to another friend. How many do you have left?" }
 
                 )
             }
-            Operation.MULTIPLICATION->{
-                result = num1*num2*num3
-                random(
-                    {furhat.ask("A box of toffees has $num1 pieces. Each carton contains $num2 boxes, and a truck can carry $num3 cartons. How many tofees can a truck carry at most?")}
+            Operation.MULTIPLICATION -> {
+                result = num1 * num2 * num3
+                tr.random(
+                        { question = "A box of toffees has $num1 pieces. Each carton contains $num2 boxes, and a truck can carry $num3 cartons. How many tofees can a truck carry at most?" }
                 )
             }
-            Operation.EQUATION->{
-
+            Operation.EQUATION -> {
+                question = ""
             }
-            Operation.DIVISION->{
-
+            Operation.DIVISION -> {
+                question = ""
             }
         }
+    }
+
+    onEntry{
+        generateQuestion(this)
+        furhat.ask(question!!)
 
     }
+
+    onReentry {
+        if(question == null)
+            generateQuestion(this)
+        furhat.ask(question!!)
+    }
+
+
     onResponse<Number>{
         if(result != it.intent.value){
             goto(DifficultProblemSolution(operation,num1,num2,num3))
@@ -348,7 +365,7 @@ fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Inte
                 furhat.say("Good, now draw $num2 more lines")
                 delay(2000)
                 furhat.say("Alright, now let's count the total number of lines")
-                for(i in 0..num1+num2){
+                for(i in 1..num1+num2){
                     furhat.say(i.toString())
                     delay(100)
                 }
@@ -361,7 +378,7 @@ fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Inte
                 furhat.say("Good, now erase $num2 of them")
                 delay(2000)
                 furhat.say("Alright, now let's count the remaining lines")
-                for(i in 0..num1-num2){
+                for(i in 1..num1-num2){
                     furhat.say(i.toString())
                     delay(100)
                 }
