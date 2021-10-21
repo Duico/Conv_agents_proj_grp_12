@@ -40,6 +40,9 @@ val Interaction: State = state {
 // Make Furhat interruptable during all furhat.say(...)
         furhat.param.interruptableOnSay = true
         furhat.param.interruptableWithoutIntents = true          //to make states that implement onResponse { } interruptible as well
+        parallel {
+            goto(StartTalking)
+        }
     }
 
     onUserLeave(instant = true) {
@@ -65,10 +68,10 @@ val Interaction: State = state {
 
 }
 
-val Interrupted: State = state {
+fun GazeState(scenario: Gaze): State = state {
     onEntry {
         var lookingAway = false
-        val sample = interruptionGaze.getRandomSample()
+        val sample = scenario.getRandomSample()
 
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
             for (gazeState in sample) {
@@ -92,6 +95,14 @@ val Interrupted: State = state {
     onExit {
         furhat.attend(users.current)
     }
+}
+
+val Interrupted: State = state(GazeState(interruptionGaze)) {
+
+}
+
+val StartTalking: State = state(GazeState(startSpeakingGaze)) {
+
 }
 
 enum class Operation {
