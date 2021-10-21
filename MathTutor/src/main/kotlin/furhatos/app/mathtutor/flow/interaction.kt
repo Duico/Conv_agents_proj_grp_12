@@ -16,7 +16,7 @@ var learntAdd = 0
 var learntSubt = 0
 var learntMul = 0
 var learntDiv=0
-var prevOp = Operation.EMPTY
+var prevOp : Operation? = null
 var entryTime = 0
 fun detectEmotion(): String {
     return ""
@@ -57,9 +57,9 @@ val Greeting : State = state(Interaction) {
         goto(GetOperation)
     }
 
-    /*onResponse{
+    onResponse{
         goto(GetOperation)
-    }*/
+    }
 }
 
 val GetOperation : State = state(Interaction) {
@@ -261,7 +261,7 @@ fun DetailedExplanation(operation: Operation) :State = state(Interaction){
                 furhat.say("Which gives us the answer of ${num1+num2} fingers. Easy")
             }
             Operation.SUBTRACTION -> {
-                random({furhat.say("To understand this concept better, let's take an example of subtract $num1 and $num2")},{furhat.say("To get a grasp of the concept, let's see how to subtract $num1 and $num2")})
+                random({furhat.say("To understand this concept better, let's take an example of subtracting $num1 and $num2")},{furhat.say("To get a grasp of the concept, let's see how to subtract $num1 and $num2")})
                 delay(2000)
                 random({ furhat.say("Okay, now I want you to show $num1 using your fingers") },
                     { furhat.say("Raise $num1 fingers") }
@@ -329,38 +329,48 @@ fun MediumProblem(operation: Operation) = state(Interaction){
     var result = 0
     var num1 = 0
     var num2 = 0
+    var question:String?= null
+    fun generateQuestion(tr: FlowControlRunner) {
+        num1 = Random.nextInt(2, 5)
+        num2 = Random.nextInt(1, num1)
+        when (operation) {
+            Operation.ADDITION -> {
+                result = num1 + num2
+                tr.random({question =  "If I have $num1 coins and then get $num2 more, how many do I finally have?" },
+                    { question = "I have $num1 candies and you have $num2. Now I give you all of my candies, so how many will you end up with?" }
+                )
+            }
+            Operation.SUBTRACTION -> {
+                result = num1 - num2
+                tr.random({ question = "So if I had $num1 apples, and I lose $num2 , how many do I have now?" },
+                    { question = "I have $num2 apples, but I want $num1, so how many more should I buy?" }
+                )
+            }
+            Operation.MULTIPLICATION -> {
+                result = num1 * num2
+                tr.random({question =  "So if I had a basket with $num1 apples, and I buy $num2 such baskets, how many do I have now?" },
+                    { question = "A box of chocolates at the store has $num1 pieces, and I buy $num2 boxes, chocolates do I have in total?" }
+                )
+            }
+            else -> {
+                question = ""
+            }
+
+        }
+    }
     onEntry{
         parallel(abortOnExit = false) {
             goto(StartTalking)
         }
-        if(num1 == 0 && num2 == 0) {
-            num1 = Random.nextInt(2, 5)
-            num2 = Random.nextInt(1, num1)
-        }
-        when(operation){
-            Operation.ADDITION->{
-                result = num1 + num2
-                random({furhat.ask("If I have $num1 coins and then get $num2 more, how many do I finally have?")},
-                    {furhat.ask("I have $num1 candies and you have $num2. Now I give you all of my candies, so how many will you end up with?")}
-                )
-            }
-            Operation.SUBTRACTION->{
-                result = num1 - num2
-                random({furhat.ask("So if I had $num1 apples, and I lose $num2 , how many do I have now?") },
-                    furhat.ask("I have $num2 apples, but I want $num1, so how many more should I buy?")
-                )
-            }
-            Operation.MULTIPLICATION->{
-                result  = num1 * num2
-                random({furhat.ask("So if I had a basket with $num1 apples, and I buy $num2 such baskets, how many do I have now?")},
-                    {furhat.ask("A box of chocolates at the store has $num1 pieces, and I buy $num2 boxes, chocolates do I have in total?")}
-                )
-            }
-            else->{
-
-            }
-        }
+        generateQuestion(this)
+        furhat.ask(question!!)
     }
+    onReentry {
+        if(question == null)
+            generateQuestion(this)
+        furhat.ask(question!!)
+    }
+
     onResponse<Number>{
         if(it.intent.value == result){
             furhat.say("Good job! That's correct. Let's look at a more challenging problem now.")
@@ -388,12 +398,12 @@ fun DifficultProblem(operation:Operation) :State= state(Interaction){
     var question: String? = null
 
     fun generateQuestion(tr: FlowControlRunner) {
-        if(num1 == 0 && num2 == 0 && num3 ==0)  {
-            num1 = Random.nextInt(8, 10)
-            num2 = Random.nextInt(1, 4)
-            num3 = Random.nextInt(1, 4)
-            result = 0
-        }
+        num1 = Random.nextInt(8, 10)
+        num2 = Random.nextInt(1, 4)
+        num3 = Random.nextInt(1, 4)
+        result = 0
+
+
         when (operation) {
             Operation.ADDITION -> {
                 result = num1 + num2 + num3
@@ -568,32 +578,41 @@ fun DifficultProblemSolution(operation: Operation,num1: Int,num2: Int,num3:Int) 
 }
 
 fun EasyProblem(operation:Operation) :State = state(Interaction){
-    var num1 = 0
+    var num1: Int
     var result = 0
+    var question:String? = null
+    fun generateQuestion(tr: FlowControlRunner){
+        num1 = Random.nextInt(1, 2)
+
+        when(operation){
+            Operation.ADDITION->{
+                result = num1 + num1
+                tr.random({question = "What would I get if I had $num1 toffees and bought $num1 more?"})
+            }
+            Operation.SUBTRACTION->{
+                result = 0
+                tr.random({question = "If I had $num1 toffees and I lost all, how many would I have?"})
+            }
+            Operation.MULTIPLICATION->{
+                result = num1
+                tr.random({question = "If a box has 1 toffee and bought $num1 boxes, how many toffees would I have in total?"})
+            }
+            else->{
+                question = ""
+            }
+        }
+    }
     onEntry{
         parallel(abortOnExit = false) {
             goto(StartTalking)
         }
-        if(num1 == 0) {
-            num1 = Random.nextInt(1, 2)
-        }
-        when(operation){
-            Operation.ADDITION->{
-                result = num1 + num1
-                furhat.ask("What would I get if I had $num1 toffees and bought $num1 more?")
-            }
-            Operation.SUBTRACTION->{
-                result = 0
-                furhat.ask("If I had $num1 toffees and I lost all, how many would I have?")
-            }
-            Operation.MULTIPLICATION->{
-                result = num1
-                furhat.ask("If a box has 1 toffee and bought $num1 boxes, how many toffees would I have in total?")
-            }
-            else->{
 
-            }
-        }
+
+    }
+    onReentry {
+        if(question == null)
+            generateQuestion(this)
+        furhat.ask(question!!)
     }
     onResponse<Number>{
         if(result == it.intent.value){
@@ -645,8 +664,10 @@ val EvaluateConditions:State = state(Interaction){
         goto(GetOperation)
     }
     onResponse<No>{
-        furhat.ask("Haha, I'm sorry, but I can't let you leave class this early. Let's solve some more problems then")
-        goto(MediumProblem(prevOp))
+        furhat.say("Haha, I'm sorry, but I can't let you leave class this early. Let's solve some more problems then")
+        if(prevOp != null) {
+            goto(MediumProblem(prevOp!!))
+        }
     }
 }
 
