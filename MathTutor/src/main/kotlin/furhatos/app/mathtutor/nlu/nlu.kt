@@ -1,11 +1,59 @@
 package furhatos.app.mathtutor.nlu
 
 import furhatos.app.mathtutor.flow.Operation
-import furhatos.nlu.*
-import furhatos.util.Language
+import furhatos.nlu.ComplexEnumEntity
+import furhatos.nlu.EnumEntity
+import furhatos.nlu.GrammarEntity
+import furhatos.nlu.Intent
 import furhatos.nlu.common.Number
 import furhatos.nlu.grammar.Grammar
 import furhatos.nlu.kotlin.grammar
+import furhatos.util.Language
+
+class RepeatQuestion : Intent() {
+    override fun getExamples(lang: Language): List<String> {
+        return listOf("Could you repeat the question", "Could you repeat the question?",
+            "repeat",
+            "I didn't get the question"
+        )
+    }
+}
+
+class AddingProblem : Intent(){
+    override fun getExamples(lang: Language): List<String> {
+        return listOf("Addition", "addition",
+            "adding","add"
+
+        )
+    }
+}
+
+class SubtractionProblem : Intent(){
+    override fun getExamples(lang: Language): List<String> {
+        return listOf("subtracting", "difference",
+            "subtract"
+
+        )
+    }
+}
+
+class MultiplicationProblem : Intent() {
+    override fun getExamples(lang: Language): List<String> {
+        return listOf(
+            "multiply", "multiplying",
+            "product","multiplication"
+        )
+    }
+}
+
+class DivisionProblem : Intent() {
+    override fun getExamples(lang: Language): List<String> {
+        return listOf(
+            "divide", "dividing",
+            "quotient","division"
+        )
+    }
+}
 
 class OperationIntent(
         val operationEntity : OperationEntity? = null

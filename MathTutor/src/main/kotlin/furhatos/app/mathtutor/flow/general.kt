@@ -1,7 +1,8 @@
 package furhatos.app.mathtutor.flow
 
 import furhatos.flow.kotlin.*
-import furhatos.util.*
+import furhatos.util.Gender
+import furhatos.util.Language
 
 val Idle: State = state {
 
@@ -42,8 +43,9 @@ val Interaction: State = state {
         furhat.glance(it)
     }
 
+
 }
 
 enum class Operation {
-    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION
+    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION,EMPTY
 }
