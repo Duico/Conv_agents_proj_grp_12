@@ -111,8 +111,8 @@ val StartTalking: State = state {
                         val absoluteLocation = getRandomLocation()
                         // Relative to the current user
                         //val relativeLocation = absoluteLocation.add(Location(users.current))
-                        print("start talking")
-                        print(users.current.fields)
+                        //print("start talking")
+                        //print(users.current.fields)
 
                         furhat.attend(absoluteLocation)
                         lookingAway = true
