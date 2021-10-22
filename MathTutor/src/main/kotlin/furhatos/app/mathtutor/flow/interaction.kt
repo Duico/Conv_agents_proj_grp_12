@@ -29,9 +29,7 @@ fun timeLeft(): Boolean {
 val Greeting : State = state(Interaction) {
 
     onEntry {
-        parallel {
-            goto(GazeLoop) // Start parallel gaze loop which catches Events
-        }
+
         send(OnStartTalking())
         entryTime = Instant.now()
         furhat.ask("Hello. I'm MathTutor, your AI math teacher.")
