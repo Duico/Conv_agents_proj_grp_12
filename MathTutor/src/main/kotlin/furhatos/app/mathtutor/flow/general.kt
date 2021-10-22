@@ -2,9 +2,15 @@ package furhatos.app.mathtutor.flow
 
 import furhatos.app.mathtutor.gaze.Gaze
 import furhatos.app.mathtutor.gaze.getRandomLocation
+import furhatos.event.Event
 import furhatos.flow.kotlin.*
+import furhatos.records.Location
 import furhatos.util.Gender
 import furhatos.util.Language
+import java.io.File
+import java.time.LocalDateTime
+import java.util.*
+import kotlin.random.Random
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
@@ -31,13 +37,17 @@ val Idle: State = state {
 
 val Interaction: State = state {
     init {
-        furhat.param.interruptableOnAsk = true                  //to make all states interruptible. This can be done individually for each state as well
-// Make Furhat interruptable during all furhat.say(...)
+        //to make all states interruptible. This can be done individually for each state as well
+        furhat.param.interruptableOnAsk = true
+        // Make Furhat interruptable during all furhat.say(...)
         furhat.param.interruptableOnSay = false
-        furhat.param.interruptableWithoutIntents = true          //to make states that implement onResponse { } interruptible as well
-        parallel {
-            goto(StartTalking)
-        }
+        //to make states that implement onResponse { } interruptible as well
+        furhat.param.interruptableWithoutIntents = true
+
+        // Set up flow logging
+        val now = LocalDateTime.now()
+        val logFile = File("./logs/log-$now-${UUID.randomUUID()}.txt")
+        flowLogger.start(logFile) //Start the logger
     }
 
     onUserLeave(instant = true) {
@@ -60,7 +70,7 @@ val Interaction: State = state {
     onResponse(instant = true) {
         if(it.interrupted == true) {
             parallel {
-                goto(Interrupted)
+                send(OnInterrupt())
             }
             reentry()
         }
@@ -71,42 +81,17 @@ val Interaction: State = state {
 
 }
 
-val Interrupted: State = state {
+class OnStartTalking : Event()
+class OnInterrupt : Event()
+class OnListening : Event()
+class OnSpeaking : Event()
+
+val GazeLoop: State = state {
     onEntry {
-        var lookingAway = false
-        val sample = interruptionGaze.getRandomSample()
-        print(sample)
-        print("interrupted")
-        if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
-            for (gazeState in sample) {
-                if (!gazeState) { // Check if we should be looking away (!gazeState)
-                    if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
-                        // Get some random spot to look at
-                        val absoluteLocation = getRandomLocation()
-                        // Relative to the current user
-                        //println(absoluteLocation)
-
-                        //val relativeLocation = absoluteLocation.add(Location(users.current))
-                        furhat.attend(absoluteLocation)
-                        lookingAway = true
-                    }
-                } else {
-                    furhat.attend(users.current)
-                }
-
-
-                delay(10) // Sample data is in 100ms buckets, so this loop should only run at that frequency
-            }
-        }
+        send(OnListening())
     }
 
-    onExit {
-        furhat.attend(users.current)
-    }
-}
-
-val StartTalking: State = state {
-    onEntry {
+    onEvent<OnStartTalking> {
         var lookingAway = false
         val sample = startSpeakingGaze.getRandomSample()
 
@@ -116,26 +101,54 @@ val StartTalking: State = state {
                     if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
                         // Get some random spot to look at
                         val absoluteLocation = getRandomLocation()
-                        // Relative to the current user
-                        //val relativeLocation = absoluteLocation.add(Location(users.current))
-                        //print("start talking")
-                        //print(users.current.fields)
-
                         furhat.attend(absoluteLocation)
                         lookingAway = true
                     }
                 } else {
                     furhat.attend(users.current)
                 }
-                //asyncDelay(10)
+                // Sample data is in 10ms buckets, so this loop should only run at that frequency
                 delay(10)
-                 // Sample data is in 100ms buckets, so this loop should only run at that frequency
             }
+        }
+        send(OnSpeaking())
+    }
+
+    onEvent<OnInterrupt> {
+        var lookingAway = false
+        val sample = interruptionGaze.getRandomSample()
+        if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
+            for (gazeState in sample) {
+                if (!gazeState) { // Check if we should be looking away (!gazeState)
+                    if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
+                        // Get some random spot to look at
+                        val absoluteLocation = getRandomLocation()
+                        furhat.attend(absoluteLocation)
+                        lookingAway = true
+                    }
+                } else {
+                    furhat.attend(users.current)
+                }
+                delay(10) // Sample data is in 10ms buckets, so this loop should only run at that frequency
+            }
+        }
+
+        send(OnSpeaking())
+    }
+
+    onEvent<OnSpeaking> {
+        // Random glances away while speaking
+        while (true) {
+            val wait = Random.nextDouble(1.5, 5.0)
+            delay(wait.toLong() * 100)
+            val glanceLength = Random.nextInt(1, 3)
+            furhat.glance(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z),
+                glanceLength)
         }
     }
 
-    onExit {
-        furhat.attend(users.current)
+    onEvent<OnListening> {
+        furhat.attend(furhat.users.current)
     }
 }
 
