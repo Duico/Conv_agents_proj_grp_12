@@ -8,7 +8,6 @@ import furhatos.records.Location
 import furhatos.util.Gender
 import furhatos.util.Language
 import java.io.File
-import java.time.LocalDateTime
 import java.util.*
 import kotlin.random.Random
 
@@ -45,9 +44,15 @@ val Interaction: State = state {
         furhat.param.interruptableWithoutIntents = true
 
         // Set up flow logging
-        val now = LocalDateTime.now()
-        val logFile = File("./logs/log-$now-${UUID.randomUUID()}.txt")
+        //val now = LocalDateTime.now()
+        val logFile = File("logs/log_${UUID.randomUUID()}.log")
+        logFile.createNewFile()
+        //println("logs/log_${now}_${UUID.randomUUID()}.txt")
+        //println(status)
         flowLogger.start(logFile) //Start the logger
+        parallel(abortOnExit = false){
+            goto(GazeLoop) // Start parallel gaze loop which catches Events
+        }
     }
 
     onUserLeave(instant = true) {
@@ -137,8 +142,10 @@ val GazeLoop: State = state {
     }
 
     onEvent<OnSpeaking> {
+
         // Random glances away while speaking
         while (true) {
+            //println("onspeakingtriggered")
             val wait = Random.nextDouble(1.5, 5.0)
             delay(wait.toLong() * 100)
             val glanceLength = Random.nextInt(1, 3)
@@ -148,6 +155,7 @@ val GazeLoop: State = state {
     }
 
     onEvent<OnListening> {
+        print("onlisteningtriggered")
         furhat.attend(furhat.users.current)
     }
 }
