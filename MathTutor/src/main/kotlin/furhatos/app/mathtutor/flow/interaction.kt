@@ -22,7 +22,7 @@ fun detectEmotion(): String {
 fun timeLeft(): Boolean {
     var currTime = Instant.now()
     print("Duration (sec): "+Duration.between(entryTime, currTime).seconds)
-    return Duration.between(entryTime, currTime).seconds > 180
+    return Duration.between(entryTime, currTime).seconds < 180
 }
 
 val Greeting : State = state(Interaction) {
@@ -138,6 +138,7 @@ fun BriefExplanation(operation: Operation) = state(Interaction) {
                 {introSentence = "Got it! You have some doubts with $text."},
                 {introSentence = "Ohh, $text! That's an easy one!"})
         furhat.say(introSentence)
+        //TODO smile
 
         furhat.say("But before I begin, let me ask you a simple question from this topic to check your understanding")
 
@@ -600,7 +601,7 @@ val EvaluateConditions:State = state(Interaction){
     onEntry{
         send(OnStartTalking())
         var emotion = detectEmotion()
-        if(emotion == "" && timeLeft()){
+        if(timeLeft()){ //TODO add emotion == ??
             var learnMore = furhat.askYN("Looks like we still have some time left. Would you like to learn a new concept?")
             if(learnMore == true){
                 goto(GetOperationSecond)
@@ -635,11 +636,12 @@ val GiveHomework:State = state(Interaction){
             }
         }
         furhat.say("Well done! Today we learned about $operationsText.")
-        var satisfied = furhat.askYN("Did you enjoy today's session!")
+        var satisfied = furhat.askYN("Did you enjoy today's session?")
         if (satisfied == true) {
             furhat.say("That's nice to hear!")
         } else {
             furhat.say("I'm sorry. I'll try to do better next time!")
         }
+        furhat.say("Bye!")
     }
 }
