@@ -155,16 +155,20 @@ val GazeLoop: State = state {
     onEvent<OnSpeaking>(cond = { currentGazeState != CurrentGazeStates.SPEAKING}) {
         currentGazeState = CurrentGazeStates.SPEAKING
         var timeLastGazed = LocalDateTime.now()
+        var lookingAtSpeaker = true
         // Random glances away while speaking
         while (true) {
             //println("onspeakingtriggered")
-            val wait = Random.nextDouble(2.0, 5.0)
+            val wait = Random.nextDouble(4.0, 8.0)
             if (LocalDateTime.now().minusSeconds(wait.toLong()) > timeLastGazed) {
-//                delay(wait.toLong() * 100)
                 timeLastGazed = LocalDateTime.now()
-                val glanceLength = Random.nextInt(1, 2)
-                furhat.glance(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z),
-                    glanceLength)
+                if (lookingAtSpeaker) {
+                    lookingAtSpeaker = false
+                    furhat.attend(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z))
+                } else {
+                    lookingAtSpeaker = true
+                    furhat.attend(furhat.users.current)
+                }
             }
         }
     }
