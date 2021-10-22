@@ -357,8 +357,11 @@ fun MediumProblem(operation: Operation) = state(Interaction){
         }
     }
 
-    onResponse{
+    onResponse<RepeatQuestion>{
         reentry()
+    }
+    onResponse{
+        goto(MediumProblemSolution(operation, num1, num2))
     }
 
 }
@@ -429,8 +432,11 @@ fun DifficultProblem(operation:Operation) : State = state(Interaction){
             }
         }
     }
-    onResponse{
+    onResponse<RepeatQuestion>{
         reentry()
+    }
+    onResponse{
+        goto(DifficultProblemSolution(operation, num1, num2, num3))
     }
 }
 
