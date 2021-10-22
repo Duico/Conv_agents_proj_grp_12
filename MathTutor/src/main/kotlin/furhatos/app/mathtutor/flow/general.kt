@@ -5,7 +5,6 @@ import furhatos.app.mathtutor.gaze.getRandomLocation
 import furhatos.flow.kotlin.*
 import furhatos.util.Gender
 import furhatos.util.Language
-import furhatos.records.Location
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
@@ -34,7 +33,7 @@ val Interaction: State = state {
     init {
         furhat.param.interruptableOnAsk = true                  //to make all states interruptible. This can be done individually for each state as well
 // Make Furhat interruptable during all furhat.say(...)
-        furhat.param.interruptableOnSay = true
+        furhat.param.interruptableOnSay = false
         furhat.param.interruptableWithoutIntents = true          //to make states that implement onResponse { } interruptible as well
         parallel {
             goto(StartTalking)
@@ -58,8 +57,16 @@ val Interaction: State = state {
         furhat.glance(it)
     }
 
-    onResponse(instant = true, cond = {it.interrupted}) {
-        goto(Interrupted)
+    onResponse(instant = true) {
+        if(it.interrupted == true) {
+            parallel {
+                goto(Interrupted)
+            }
+            reentry()
+        }
+        else{
+            reentry()
+        }
     }
 
 }
@@ -68,7 +75,8 @@ val Interrupted: State = state {
     onEntry {
         var lookingAway = false
         val sample = interruptionGaze.getRandomSample()
-
+        print(sample)
+        print("interrupted")
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
             for (gazeState in sample) {
                 if (!gazeState) { // Check if we should be looking away (!gazeState)
@@ -76,14 +84,18 @@ val Interrupted: State = state {
                         // Get some random spot to look at
                         val absoluteLocation = getRandomLocation()
                         // Relative to the current user
-                        val relativeLocation = absoluteLocation.add(Location(users.current))
-                        furhat.attend(relativeLocation)
+                        //println(absoluteLocation)
+
+                        //val relativeLocation = absoluteLocation.add(Location(users.current))
+                        furhat.attend(absoluteLocation)
                         lookingAway = true
                     }
                 } else {
                     furhat.attend(users.current)
                 }
-                delay(100) // Sample data is in 100ms buckets, so this loop should only run at that frequency
+
+
+                delay(10) // Sample data is in 100ms buckets, so this loop should only run at that frequency
             }
         }
     }
@@ -105,14 +117,19 @@ val StartTalking: State = state {
                         // Get some random spot to look at
                         val absoluteLocation = getRandomLocation()
                         // Relative to the current user
-                        val relativeLocation = absoluteLocation.add(Location(users.current))
-                        furhat.attend(relativeLocation)
+                        //val relativeLocation = absoluteLocation.add(Location(users.current))
+                        //print("start talking")
+                        //print(users.current.fields)
+
+                        furhat.attend(absoluteLocation)
                         lookingAway = true
                     }
                 } else {
                     furhat.attend(users.current)
                 }
-                delay(100) // Sample data is in 100ms buckets, so this loop should only run at that frequency
+                //asyncDelay(10)
+                delay(10)
+                 // Sample data is in 100ms buckets, so this loop should only run at that frequency
             }
         }
     }
@@ -123,5 +140,5 @@ val StartTalking: State = state {
 }
 
 enum class Operation {
-    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION,EMPTY
+    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION
 }
