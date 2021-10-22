@@ -21,9 +21,20 @@ fun detectEmotion(): String {
     return ""
 }
 
+<<<<<<< HEAD
 fun timeLeft(): Boolean {
     var currTime = Instant.now()
     return Duration.between(entryTime, currTime).seconds > 180
+=======
+fun timeLeft():Boolean {
+    var currTime = Calendar.getInstance().get(Calendar.MINUTE)
+    if(currTime - entryTime >= 3) {
+        return false
+    }
+    else{
+        return true
+    }
+>>>>>>> 4808523002987c51a8db021a24bef5982da0b014
 }
 
 val Greeting : State = state(Interaction) {
@@ -268,7 +279,7 @@ fun GaugeDetailedExplanation(operation:Operation) = state(Interaction){
     onEntry {
         send(OnStartTalking())
         var emotion = detectEmotion()
-        if(emotion == "Confused"){
+        if(emotion == "Confused" && timeLeft()){
             goto(DetailedExplanation(operation))
         }
         else{
@@ -607,6 +618,7 @@ val EvaluateConditions:State = state(Interaction){
     }
     onResponse<No>{
         furhat.say("Haha, I'm sorry, but I can't let you leave class this early. Let's solve some more problems then")
+        furhat.say("You have only spent ${Calendar.getInstance().get(Calendar.MINUTE) - entryTime} minutes" )
         if(prevOp != null) {
             goto(MediumProblem(prevOp!!))
         }
@@ -615,8 +627,15 @@ val EvaluateConditions:State = state(Interaction){
 
 val GiveHomework:State = state(Interaction){
     onEntry{
+<<<<<<< HEAD
         send(OnStartTalking())
         if(timeLeft()){
+=======
+        parallel(abortOnExit = false) {
+            goto(StartTalking)
+        }
+        if(!timeLeft()){
+>>>>>>> 4808523002987c51a8db021a24bef5982da0b014
             furhat.ask("Well done! Hope you enjoyed today's session!")
         }
     }
