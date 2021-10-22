@@ -26,25 +26,24 @@ abstract class VerbalOperationIntent: Intent{
         this.operation = operation
     }
 }
-class AddingProblem(override var operation: Operation = Operation.ADDITION) : VerbalOperationIntent(operation){
+class VerbalAddition(override var operation: Operation = Operation.ADDITION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf("Addition", "addition",
-            "adding","add"
+            "adding", "add", "plus"
 
         )
     }
 }
 
-class SubtractionProblem (override var operation: Operation = Operation.SUBTRACTION) : VerbalOperationIntent(operation){
+class VerbalSubtraction (override var operation: Operation = Operation.SUBTRACTION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf("subtracting", "difference",
-            "subtract"
-
+            "subtract", "subtraction", "minus"
         )
     }
 }
 
-class MultiplicationProblem (override var operation: Operation = Operation.MULTIPLICATION) : VerbalOperationIntent(operation){
+class VerbalMultiplication (override var operation: Operation = Operation.MULTIPLICATION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf(
             "multiply", "multiplying",
@@ -53,7 +52,7 @@ class MultiplicationProblem (override var operation: Operation = Operation.MULTI
     }
 }
 
-class DivisionProblem (override var operation: Operation = Operation.DIVISION) : VerbalOperationIntent(operation) {
+class VerbalDivision (override var operation: Operation = Operation.DIVISION) : VerbalOperationIntent(operation) {
     override fun getExamples(lang: Language): List<String> {
         return listOf(
             "divide", "dividing",
