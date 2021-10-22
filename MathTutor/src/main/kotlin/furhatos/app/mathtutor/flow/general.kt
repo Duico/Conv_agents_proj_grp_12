@@ -13,6 +13,7 @@ import kotlin.random.Random
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
+var isInGazeSequence = false
 
 val Idle: State = state {
 
@@ -44,11 +45,9 @@ val Interaction: State = state {
         furhat.param.interruptableWithoutIntents = true
 
         // Set up flow logging
-        //val now = LocalDateTime.now()
-        val logFile = File("logs/log_${UUID.randomUUID()}.log")
+//        val now = LocalDateTime.now().toString().replace(':', '-')
+        val logFile = File("logs/log-${UUID.randomUUID()}.log")
         logFile.createNewFile()
-        //println("logs/log_${now}_${UUID.randomUUID()}.txt")
-        //println(status)
         flowLogger.start(logFile) //Start the logger
         parallel(abortOnExit = false){
             goto(GazeLoop) // Start parallel gaze loop which catches Events
@@ -91,12 +90,19 @@ class OnInterrupt : Event()
 class OnListening : Event()
 class OnSpeaking : Event()
 
+enum class CurrentGazeStates {
+    START_SPEAKING, INTERRUPT, LISTENING, SPEAKING
+}
+
+var currentGazeState = CurrentGazeStates.LISTENING
+
 val GazeLoop: State = state {
     onEntry {
         send(OnListening())
     }
 
-    onEvent<OnStartTalking> {
+    onEvent<OnStartTalking>(cond = { currentGazeState != CurrentGazeStates.START_SPEAKING}) {
+        currentGazeState = CurrentGazeStates.START_SPEAKING
         var lookingAway = false
         val sample = startSpeakingGaze.getRandomSample()
 
@@ -116,10 +122,12 @@ val GazeLoop: State = state {
                 delay(10)
             }
         }
+        furhat.attend(users.current)
         send(OnSpeaking())
     }
 
-    onEvent<OnInterrupt> {
+    onEvent<OnInterrupt>(cond = { currentGazeState != CurrentGazeStates.INTERRUPT}) {
+        currentGazeState = CurrentGazeStates.INTERRUPT
         var lookingAway = false
         val sample = interruptionGaze.getRandomSample()
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
@@ -137,12 +145,12 @@ val GazeLoop: State = state {
                 delay(10) // Sample data is in 10ms buckets, so this loop should only run at that frequency
             }
         }
-
+        furhat.attend(users.current)
         send(OnSpeaking())
     }
 
-    onEvent<OnSpeaking> {
-
+    onEvent<OnSpeaking>(cond = { currentGazeState != CurrentGazeStates.SPEAKING}) {
+        currentGazeState = CurrentGazeStates.SPEAKING
         // Random glances away while speaking
         while (true) {
             //println("onspeakingtriggered")
@@ -154,7 +162,8 @@ val GazeLoop: State = state {
         }
     }
 
-    onEvent<OnListening> {
+    onEvent<OnListening>(cond = { currentGazeState != CurrentGazeStates.LISTENING}) {
+        currentGazeState = CurrentGazeStates.LISTENING
         print("onlisteningtriggered")
         furhat.attend(furhat.users.current)
     }
