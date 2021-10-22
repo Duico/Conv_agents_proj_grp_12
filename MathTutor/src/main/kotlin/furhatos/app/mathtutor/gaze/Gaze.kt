@@ -4,14 +4,16 @@ import furhatos.nlu.kotlin.logger
 import furhatos.records.Location
 import kotlin.random.Random
 
+
 fun getRandomLocation(): Location {
-    var x = Random.nextDouble(1.0, 2.5)   // Look right by default
-    val direction = Random.nextInt(0, 1)
+
+    var x = Random.nextDouble(0.25, 1.0)   // Look right by default
+    val direction = Random.nextInt(0, 2)
     if (direction == 0) { // Look left if `direction` is 0
         x = -x
     }
-    val y = Random.nextDouble(-0.5, 0.0) // Random double between -0.5 and 0.5
-    return Location(x, y, .0)
+    val y = Random.nextDouble(-0.5, 0.2) // Random double between -0.5 and 0.5
+    return Location(x, y, 3.0)
 }
 
 class Gaze(type: String) {

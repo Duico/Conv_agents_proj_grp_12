@@ -9,6 +9,7 @@ import furhatos.nlu.common.Number
 import furhatos.nlu.grammar.Grammar
 import furhatos.nlu.kotlin.grammar
 import furhatos.util.Language
+import net.didion.jwnl.data.Verb
 
 class RepeatQuestion : Intent() {
     override fun getExamples(lang: Language): List<String> {
@@ -19,7 +20,13 @@ class RepeatQuestion : Intent() {
     }
 }
 
-class AddingProblem : Intent(){
+abstract class VerbalOperationIntent: Intent{
+    abstract var operation: Operation
+    constructor(operation: Operation): super() {
+        this.operation = operation
+    }
+}
+class AddingProblem(override var operation: Operation = Operation.ADDITION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf("Addition", "addition",
             "adding","add"
@@ -28,7 +35,7 @@ class AddingProblem : Intent(){
     }
 }
 
-class SubtractionProblem : Intent(){
+class SubtractionProblem (override var operation: Operation = Operation.SUBTRACTION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf("subtracting", "difference",
             "subtract"
@@ -37,7 +44,7 @@ class SubtractionProblem : Intent(){
     }
 }
 
-class MultiplicationProblem : Intent() {
+class MultiplicationProblem (override var operation: Operation = Operation.MULTIPLICATION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf(
             "multiply", "multiplying",
@@ -46,7 +53,7 @@ class MultiplicationProblem : Intent() {
     }
 }
 
-class DivisionProblem : Intent() {
+class DivisionProblem (override var operation: Operation = Operation.DIVISION) : VerbalOperationIntent(operation) {
     override fun getExamples(lang: Language): List<String> {
         return listOf(
             "divide", "dividing",
