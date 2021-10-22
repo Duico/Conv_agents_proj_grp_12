@@ -7,7 +7,10 @@ import furhatos.flow.kotlin.*
 import furhatos.records.Location
 import furhatos.util.Gender
 import furhatos.util.Language
+import khttp.async
 import java.io.File
+import java.time.LocalDateTime
+import java.time.temporal.TemporalAmount
 import java.util.*
 import kotlin.random.Random
 
@@ -151,14 +154,18 @@ val GazeLoop: State = state {
 
     onEvent<OnSpeaking>(cond = { currentGazeState != CurrentGazeStates.SPEAKING}) {
         currentGazeState = CurrentGazeStates.SPEAKING
+        var timeLastGazed = LocalDateTime.now()
         // Random glances away while speaking
         while (true) {
             //println("onspeakingtriggered")
-            val wait = Random.nextDouble(1.5, 5.0)
-            delay(wait.toLong() * 100)
-            val glanceLength = Random.nextInt(1, 3)
-            furhat.glance(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z),
-                glanceLength)
+            val wait = Random.nextDouble(2.0, 5.0)
+            if (LocalDateTime.now().minusSeconds(wait.toLong()) > timeLastGazed) {
+//                delay(wait.toLong() * 100)
+                timeLastGazed = LocalDateTime.now()
+                val glanceLength = Random.nextInt(1, 2)
+                furhat.glance(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z),
+                    glanceLength)
+            }
         }
     }
 
