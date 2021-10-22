@@ -4,8 +4,11 @@ import furhatos.app.mathtutor.nlu.*
 import furhatos.nlu.common.*
 import furhatos.flow.kotlin.*
 import furhatos.nlu.common.Number
+import furhatos.records.Location
 import java.time.Duration
 import java.time.Instant
+import java.util.*
+import javax.xml.soap.Detail
 import kotlin.random.Random
 
 var learntAdd = 0
@@ -27,7 +30,7 @@ val Greeting : State = state(Interaction) {
 
     onEntry {
 
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         entryTime = Instant.now()
         furhat.ask("Hello. I'm MathTutor, your AI math teacher.")
     }
@@ -48,7 +51,7 @@ val Greeting : State = state(Interaction) {
 
 val GetOperation : State = state(Interaction) {
     onEntry {
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         furhat.ask("What math problem are you stuck on?")
         send(OnListening())
         }
@@ -105,14 +108,14 @@ val GetOperation : State = state(Interaction) {
 
 val GetOperationSecond: State = state(GetOperation){
     onEntry {
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         furhat.ask("Is there any other problem you want to discuss?")
     }
 }
 
 fun BriefExplanation(operation: Operation) = state(Interaction) {
     onEntry {
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         val text = operation.toString()
         furhat.say("I'm going to explain: $text") // Kotlin string interpolation
 
@@ -157,7 +160,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
     }
 
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         if(question == null)
             generateQuestion(this)
         furhat.ask(question!!)
@@ -185,7 +188,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
 
 fun DetailedExplanation(operation: Operation) :State = state(Interaction){
     onEntry {
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         furhat.say("Let's make this an interactive learning experience.")
         delay(1000)
         val num1 = Random.nextInt(2, 5)
@@ -263,7 +266,7 @@ fun DetailedExplanation(operation: Operation) :State = state(Interaction){
 
 fun GaugeDetailedExplanation(operation:Operation) = state(Interaction){
     onEntry {
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         var emotion = detectEmotion()
         if(emotion == "Confused"){
             goto(DetailedExplanation(operation))
@@ -313,7 +316,7 @@ fun MediumProblem(operation: Operation) = state(Interaction){
         }
     }
     onEntry {
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         generateQuestion(this)
         furhat.ask(question!!)
     }
@@ -378,7 +381,7 @@ fun DifficultProblem(operation:Operation) : State = state(Interaction){
     }
 
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         generateQuestion(this)
         furhat.ask(question!!)
 
@@ -411,7 +414,7 @@ fun DifficultProblem(operation:Operation) : State = state(Interaction){
 
 fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Interaction){
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         random({furhat.say("Umm, no. Let's see how we should solve this problem")})
         delay(1000)
         when(operation){
@@ -479,7 +482,7 @@ fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Inte
 
 fun DifficultProblemSolution(operation: Operation,num1: Int,num2: Int,num3:Int) = state(Interaction){
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         when(operation){
             Operation.ADDITION->{
                 furhat.say("Now that you seem comfortable with the basics of addition, let's see how this can be broken down.Since there are 3 numbers to add, you first add $num1 and $num2")
@@ -544,7 +547,7 @@ fun EasyProblem(operation:Operation) :State = state(Interaction){
 
 
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         generateQuestion(this)
         furhat.ask(question!!)
     }
@@ -575,7 +578,7 @@ fun EasyProblem(operation:Operation) :State = state(Interaction){
 
 val EvaluateConditions:State = state(Interaction){
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         var emotion = detectEmotion()
         if(emotion == "" && timeLeft()){
             furhat.ask("Looks like we still have some time left. Would you like to learn a new concept?")
@@ -612,7 +615,7 @@ val EvaluateConditions:State = state(Interaction){
 
 val GiveHomework:State = state(Interaction){
     onEntry{
-        send(OnStartSpeaking())
+        send(OnStartTalking())
         if(timeLeft()){
             furhat.ask("Well done! Hope you enjoyed today's session!")
         }
