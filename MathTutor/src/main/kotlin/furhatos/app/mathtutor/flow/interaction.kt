@@ -28,6 +28,9 @@ fun timeLeft(): Boolean {
 val Greeting : State = state(Interaction) {
 
     onEntry {
+        parallel(abortOnExit = false){
+            goto(GazeLoop)
+        }
         send(OnStartTalking())
         entryTime = Instant.now()
         furhat.say("Hello. I'm MathTutor, your AI math teacher.")
@@ -196,7 +199,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
             }
         }
         else{
-            furhat.say("Hummmmm...")
+            furhat.say("Hummm...")
             furhat.say("Unfortunately, that's not the right answer. I think it'd be a good idea to understand the concept better")
             goto(DetailedExplanation(operation))
         }
@@ -231,6 +234,8 @@ fun DetailedExplanation(operation: Operation) :State = state(Interaction){
                 delay(3000)
                 furhat.say("Let's count the number of fingers now")
                 delay(2000)
+
+                send(OnListening())
                 furhat.say("You have..")
                 for( i in 1..num1+num2){
                     furhat.say(i.toString())
