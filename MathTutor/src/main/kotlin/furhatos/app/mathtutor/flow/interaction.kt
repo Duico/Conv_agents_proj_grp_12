@@ -561,7 +561,7 @@ fun DifficultProblemSolution(operation: Operation,num1: Int,num2: Int,num3:Int) 
 
             }
         }
-        goto(DifficultProblem(operation))
+        goto(MediumProblem(operation))
     }
 }
 fun EasyProblem(operation:Operation) :State = state(Interaction){
