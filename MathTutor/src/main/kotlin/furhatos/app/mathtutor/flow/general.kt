@@ -7,16 +7,14 @@ import furhatos.flow.kotlin.*
 import furhatos.records.Location
 import furhatos.util.Gender
 import furhatos.util.Language
-import khttp.async
 import java.io.File
 import java.time.LocalDateTime
-import java.time.temporal.TemporalAmount
 import java.util.*
 import kotlin.random.Random
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
-var isInGazeSequence = false
+const val DELAY_TIME = 10L * 1000000L
 
 val Idle: State = state {
 
@@ -100,54 +98,45 @@ enum class CurrentGazeStates {
 var currentGazeState = CurrentGazeStates.LISTENING
 
 val GazeLoop: State = state {
+    fun Furhat.gazeFromSample(sample: BooleanArray?) {
+        if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
+            var lookingAway = false
+            var lastSample = LocalDateTime.now()
+            for (gazeState in sample) {
+                // Sample data is in 10ms buckets, so this loop should only run at that frequency
+                if (LocalDateTime.now().minusNanos(DELAY_TIME) > lastSample) {
+                    lastSample = LocalDateTime.now()
+                    if (!gazeState) { // Check if we should be looking away (!gazeState)
+                        if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
+                            // Get some random spot to look at
+                            val absoluteLocation = getRandomLocation()
+                            attend(absoluteLocation)
+                            lookingAway = true
+                        }
+                    } else {
+                        attend(users.current)
+                    }
+                }
+            }
+        }
+    }
+
     onEntry {
         send(OnListening())
     }
 
     onEvent<OnStartTalking>(cond = { currentGazeState != CurrentGazeStates.START_SPEAKING}) {
         currentGazeState = CurrentGazeStates.START_SPEAKING
-        var lookingAway = false
         val sample = startSpeakingGaze.getRandomSample()
-
-        if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
-            for (gazeState in sample) {
-                if (!gazeState) { // Check if we should be looking away (!gazeState)
-                    if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
-                        // Get some random spot to look at
-                        val absoluteLocation = getRandomLocation()
-                        furhat.attend(absoluteLocation)
-                        lookingAway = true
-                    }
-                } else {
-                    furhat.attend(users.current)
-                }
-                // Sample data is in 10ms buckets, so this loop should only run at that frequency
-                delay(10)
-            }
-        }
+        furhat.gazeFromSample(sample)
         furhat.attend(users.current)
         send(OnSpeaking())
     }
 
     onEvent<OnInterrupt>(cond = { currentGazeState != CurrentGazeStates.INTERRUPT}) {
         currentGazeState = CurrentGazeStates.INTERRUPT
-        var lookingAway = false
         val sample = interruptionGaze.getRandomSample()
-        if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
-            for (gazeState in sample) {
-                if (!gazeState) { // Check if we should be looking away (!gazeState)
-                    if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
-                        // Get some random spot to look at
-                        val absoluteLocation = getRandomLocation()
-                        furhat.attend(absoluteLocation)
-                        lookingAway = true
-                    }
-                } else {
-                    furhat.attend(users.current)
-                }
-                delay(10) // Sample data is in 10ms buckets, so this loop should only run at that frequency
-            }
-        }
+        furhat.gazeFromSample(sample)
         furhat.attend(users.current)
         send(OnSpeaking())
     }
