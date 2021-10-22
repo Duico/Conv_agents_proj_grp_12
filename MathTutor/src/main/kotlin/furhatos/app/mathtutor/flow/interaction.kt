@@ -288,14 +288,32 @@ fun GaugeDetailedExplanation(operation:Operation) = state(Interaction){
     onEntry {
         send(OnStartTalking())
         var emotion = detectEmotion()
-        if(emotion == "Confused"){
+        if(emotion == "Confused"  && timeLeft()){
             goto(DetailedExplanation(operation))
+        }
+        else if(timeLeft() == false){
+            if(prevOp != null){
+                learntOperation[prevOp!!] = true
+            }
+            goto(Encouragement(operation))
         }
         else{
             furhat.say("Okay. Let's try another problem")
             delay(1000)
             goto(MediumProblem(operation))
         }
+    }
+}
+
+fun Encouragement(operation: Operation) = state(Interaction){
+    onEntry{
+        random({furhat.say("I understand that you aren't very happy with your performance today")},
+            {furhat.say("Don't worry though! Through practice, you will definitely master the concepts!")})
+        var emotion = detectEmotion()
+        while(emotion != "fear" || emotion == "disgust" || emotion == "angry" || emotion != ""){
+            reentry()
+        }
+        goto(GiveHomework)
     }
 }
 
