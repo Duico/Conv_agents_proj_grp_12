@@ -54,7 +54,6 @@ val Interaction: State = state {
             goto(GazeLoop) // Start parallel gaze loop which catches Events
         }
     }
-
     onUserLeave(instant = true) {
         if (users.count > 0) {
             if (it == users.current) {
@@ -170,5 +169,16 @@ val GazeLoop: State = state {
 }
 
 enum class Operation {
-    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION
+    ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, EQUATION;
+
+    override fun toString(): String {
+        return when(this) {
+            ADDITION -> "addition"
+            SUBTRACTION -> "subtraction"
+            MULTIPLICATION -> "multiplication"
+            DIVISION -> "division"
+            EQUATION -> "equations"
+        }
+
+    }
 }
