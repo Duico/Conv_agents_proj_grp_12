@@ -4,6 +4,8 @@ import furhatos.app.mathtutor.nlu.*
 import furhatos.nlu.common.*
 import furhatos.flow.kotlin.*
 import furhatos.nlu.common.Number
+import java.net.HttpURLConnection
+import java.net.URL
 import java.time.Duration
 import java.time.Instant
 import kotlin.random.Random
@@ -16,7 +18,12 @@ var binaryOpNum1: Int? = null
 var binaryOpNum2: Int? = null
 
 fun detectEmotion(): String {
-    return ""
+    val url = URL("http://localhost:9999/detect")
+    with(url.openConnection() as HttpURLConnection) {
+        requestMethod = "GET"  // optional default is GET
+        //print("\nSent 'GET' request to URL : $url; Response Code : $responseCode")
+        return responseMessage
+    }
 }
 
 fun timeLeft(): Boolean {
@@ -190,8 +197,8 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
         if(it.intent.value == result){
             val emotion = detectEmotion()
             furhat.say("Good job! Let's try another problem then")
-            if(emotion == "") {
-                //TODO: NEED TO IMPLEMENT EMOTION DETECTION
+            if(emotion == "happy" || emotion == "neutral" || emotion == "surprise") {
+                furhat.say("You seem pleased!")
                 goto(MediumProblem(operation))
             }
         }
@@ -288,7 +295,8 @@ fun GaugeDetailedExplanation(operation:Operation) = state(Interaction){
     onEntry {
         send(OnStartTalking())
         var emotion = detectEmotion()
-        if(emotion == "Confused"  && timeLeft()){
+        if((emotion == "sad" || emotion=="disgust" || emotion=="fear" || emotion =="angry")   && timeLeft()){
+            furhat.say("You don't seem satisfied. Let's look at the explanation again")
             goto(DetailedExplanation(operation))
         }
         else if(timeLeft() == false){
@@ -310,7 +318,8 @@ fun Encouragement(operation: Operation) = state(Interaction){
         random({furhat.say("I understand that you aren't very happy with your performance today")},
             {furhat.say("Don't worry though! Through practice, you will definitely master the concepts!")})
         var emotion = detectEmotion()
-        while(emotion != "fear" || emotion == "disgust" || emotion == "angry" || emotion != ""){
+        while(emotion != "fear" || emotion == "disgust" || emotion == "angry" || emotion != "sad"){
+            furhat.say("C'mon! Cheer up!")
             reentry()
         }
         goto(GiveHomework)
@@ -515,12 +524,12 @@ fun MediumProblemSolution(operation:Operation, num1: Int, num2:Int) = state(Inte
             }
         }
         var emotion = detectEmotion()
-        if(emotion == "confused"){
-            furhat.say("Hmm, let's try out an easier problem.")
+        if(emotion == "sad" || emotion =="fear" || emotion == "disgust" || emotion == "angry"){
+            furhat.say("Hmm you don't seem happy, let's try out an easier problem.")
             goto(EasyProblem(operation))
         }
         else{
-            furhat.say("Alrighty then. I think you've understood this solution. Let's move on to a more challenging problem now.")
+            furhat.say("Alright then, you look confident. I think you've understood this solution. Let's move on to a more challenging problem now.")
             goto(DifficultProblem(operation))
         }
     }
@@ -625,8 +634,8 @@ val EvaluateConditions:State = state(Interaction){
     onEntry{
         send(OnStartTalking())
         var emotion = detectEmotion()
-        if(timeLeft()){ //TODO add emotion == ??
-            var learnMore = furhat.askYN("Looks like we still have some time left. Would you like to learn a new concept?")
+        if(timeLeft() && (emotion == "happy" || emotion =="neutral" || emotion == "surprise")){ //TODO add emotion == ??
+            var learnMore = furhat.askYN("Looks like we still have some time left plus you seem confident and happy. Would you like to learn a new concept?")
             if(learnMore == true){
                 goto(GetOperationSecond)
             }else {
