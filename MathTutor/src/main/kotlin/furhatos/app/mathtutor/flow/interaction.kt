@@ -325,7 +325,7 @@ fun Encouragement(operation: Operation) = state(Interaction){
         random({furhat.say("I understand that you aren't very happy with your performance today")},
             {furhat.say("Don't worry though! Through practice, you will definitely master the concepts!")})
         var emotion = detectEmotion()
-        while(emotion != "fear" || emotion == "disgust" || emotion == "angry" || emotion != "sad"){
+        while(emotion == "fear" || emotion == "disgust" || emotion == "angry" || emotion == "sad"){
             furhat.say("C'mon! Cheer up!")
             reentry()
         }

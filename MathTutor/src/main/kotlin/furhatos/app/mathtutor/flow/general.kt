@@ -14,7 +14,8 @@ import java.time.Instant
 import java.util.*
 import kotlin.random.Random
 
-const val DISABLE_GAZE = false
+const val DISABLE_GAZE = true
+const val ENABLE_ATTEND_BUSY = false
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
@@ -145,8 +146,10 @@ val GazeLoop: State = state {
         while(true) {
             val wait = Random.nextDouble(4.0, 8.0)
                 delay((wait*1000).toLong())
-//            if(attendBusy)
-//                continue
+            if(ENABLE_ATTEND_BUSY) {
+                if (attendBusy)
+                    continue
+            }
             //if (Duration.between(Instant.now(), timeLastGazed).seconds > wait) {
                 if (!lookingAway) {
                     lookingAway = true
