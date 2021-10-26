@@ -8,15 +8,15 @@ import furhatos.records.Location
 import furhatos.util.Gender
 import furhatos.util.Language
 import java.io.File
-import java.time.LocalDateTime
 import java.util.*
 import kotlin.random.Random
 
-const DISABLE_GAZE = false
+const val DISABLE_GAZE = false
+const val ENABLE_ATTEND_BUSY = true
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
-const val DELAY_TIME = 10L * 1000000L
+const val DELAY_TIME = 10L
 
 val Idle: State = state {
 
@@ -52,9 +52,6 @@ val Interaction: State = state {
         val logFile = File("logs/log-${UUID.randomUUID()}.log")
         logFile.createNewFile()
         flowLogger.start(logFile) //Start the logger
-        parallel(abortOnExit = false){
-            goto(GazeLoop) // Start parallel gaze loop which catches Events
-        }
     }
     onUserLeave(instant = true) {
         if (users.count > 0) {
@@ -75,9 +72,7 @@ val Interaction: State = state {
 
     onResponse(instant = true) {
         if(it.interrupted == true) {
-            parallel {
-                send(OnInterrupt())
-            }
+            send(OnInterrupt())
             reentry()
         }
         else{
@@ -96,33 +91,37 @@ enum class CurrentGazeStates {
     START_SPEAKING, INTERRUPT, LISTENING, SPEAKING
 }
 
-var currentGazeState = CurrentGazeStates.LISTENING
-
 val GazeLoop: State = state {
-    fun Furhat.gazeFromSample(sample: BooleanArray?) {
+    var attendBusy = false
+    var lookingAway = false
+    var lookingAwayWithPriority = false
+
+    fun setLookingAway(isLookingAway: Boolean, priority: Boolean = false){
+        lookingAway = isLookingAway
+        if(!isLookingAway || priority)
+            lookingAwayWithPriority = isLookingAway
+    }
+
+    fun Furhat.gazeFromSample(tr: TriggerRunner<*>, sample: BooleanArray?) {
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
-            var lookingAway = false
-            var lastSample = LocalDateTime.now()
+            attendBusy = true
             for (gazeState in sample) {
                 // Sample data is in 10ms buckets, so this loop should only run at that frequency
-                if (LocalDateTime.now().minusNanos(DELAY_TIME) > lastSample) {
-                    lastSample = LocalDateTime.now()
-                    if (!gazeState) { // Check if we should be looking away (!gazeState)
-                        if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
+                    if (!gazeState) { // Check if we should be looking away (!gazeState)                            lookingAway = true
+                        if (!lookingAwayWithPriority) { // Only find a new spot to look at if furhat is currently looking at the user
                             // Get some random spot to look at
-                            val absoluteLocation = getRandomLocation()
-                            if (!DISABLE_GAZE) {
-                                attend(absoluteLocation)
-                            }
-                            lookingAway = true
+                            val absoluteLocation = Location(getRandomLocation().x, getRandomLocation().y, getRandomLocation().z)
+                            attend(absoluteLocation)
+                            setLookingAway(true, true)
                         }
                     } else {
-                        if (!DISABLE_GAZE) {
-                            attend(users.current)
-                        }
+                        attend(users.current)
+                        setLookingAway(false)
                     }
-                }
+                tr.delay(DELAY_TIME)
+                //}
             }
+            attendBusy = false
         }
     }
 
@@ -130,56 +129,55 @@ val GazeLoop: State = state {
         send(OnListening())
     }
 
-    onEvent<OnStartTalking>(cond = { currentGazeState != CurrentGazeStates.START_SPEAKING}) {
-        currentGazeState = CurrentGazeStates.START_SPEAKING
+    onEvent<OnStartTalking>() {
         val sample = startSpeakingGaze.getRandomSample()
-        furhat.gazeFromSample(sample)
-        if (!DISABLE_GAZE) {
-            furhat.attend(users.current)
-        }
+        furhat.gazeFromSample(this, sample)
+        furhat.attend(users.current)
+        setLookingAway(false)
         send(OnSpeaking())
     }
 
-    onEvent<OnInterrupt>(cond = { currentGazeState != CurrentGazeStates.INTERRUPT}) {
-        currentGazeState = CurrentGazeStates.INTERRUPT
+    onEvent<OnInterrupt>() {
         val sample = interruptionGaze.getRandomSample()
-        furhat.gazeFromSample(sample)
-        if (!DISABLE_GAZE) {
-            furhat.attend(users.current)
-        }
+        furhat.gazeFromSample(this, sample)
+        furhat.attend(users.current)
+        setLookingAway(false)
         send(OnSpeaking())
     }
 
-    onEvent<OnSpeaking>(cond = { currentGazeState != CurrentGazeStates.SPEAKING}) {
-        currentGazeState = CurrentGazeStates.SPEAKING
-        var timeLastGazed = LocalDateTime.now()
-        var lookingAtSpeaker = true
+    onEvent<OnSpeaking>() {
         // Random glances away while speaking
-        while (true) {
-            //println("onspeakingtriggered")
-            val wait = Random.nextDouble(4.0, 8.0)
-            if (LocalDateTime.now().minusSeconds(wait.toLong()) > timeLastGazed) {
-                timeLastGazed = LocalDateTime.now()
-                if (lookingAtSpeaker) {
-                    lookingAtSpeaker = false
-                    if (!DISABLE_GAZE) {
-                        furhat.attend(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z))
-                    }
-                } else {
-                    lookingAtSpeaker = true
-                    if (!DISABLE_GAZE) {
-                        furhat.attend(furhat.users.current)
-                    }
+        val preWait = Random.nextDouble(.5,2.0)
+        delay((preWait*1000).toLong())
+        while(true) {
+            val postWait = Random.nextDouble(4.0, 8.0)
+            if(ENABLE_ATTEND_BUSY) {
+                if (attendBusy) {
+                    println("attendBusy")
+                    continue
                 }
             }
+            //if (Duration.between(Instant.now(), timeLastGazed).seconds > wait) {
+                if (!lookingAway) {
+                    setLookingAway(true)
+                    furhat.attend(Location(getRandomLocation().x*0.3, getRandomLocation().y*0.3, getRandomLocation().z))
+                } else {
+                    setLookingAway(true)
+                    furhat.attend(furhat.users.current)
+                }
+            //}
+            delay((postWait*1000).toLong())
         }
     }
 
-    onEvent<OnListening>(cond = { currentGazeState != CurrentGazeStates.LISTENING}) {
-        currentGazeState = CurrentGazeStates.LISTENING
-        print("onlisteningtriggered")
+    onEvent<OnListening>() {
         furhat.attend(furhat.users.current)
+        lookingAway = false
     }
+
+/*    onEvent<Event>{
+        //print(it.event_name)
+    }*/
 }
 
 enum class Operation {
