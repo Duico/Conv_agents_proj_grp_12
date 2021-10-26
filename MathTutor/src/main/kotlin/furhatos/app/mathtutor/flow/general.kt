@@ -7,15 +7,12 @@ import furhatos.flow.kotlin.*
 import furhatos.records.Location
 import furhatos.util.Gender
 import furhatos.util.Language
-import kotlinx.coroutines.delay
 import java.io.File
-import java.time.Duration
-import java.time.Instant
 import java.util.*
 import kotlin.random.Random
 
-const val DISABLE_GAZE = true
-const val ENABLE_ATTEND_BUSY = false
+const val DISABLE_GAZE = false
+const val ENABLE_ATTEND_BUSY = true
 
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
@@ -143,12 +140,15 @@ val GazeLoop: State = state {
 
     onEvent<OnSpeaking>() {
         // Random glances away while speaking
+        val preWait = Random.nextDouble(.5,2.0)
+        delay((preWait*1000).toLong())
         while(true) {
-            val wait = Random.nextDouble(4.0, 8.0)
-                delay((wait*1000).toLong())
+            val postWait = Random.nextDouble(4.0, 8.0)
             if(ENABLE_ATTEND_BUSY) {
-                if (attendBusy)
+                if (attendBusy) {
+                    println("attendBusy")
                     continue
+                }
             }
             //if (Duration.between(Instant.now(), timeLastGazed).seconds > wait) {
                 if (!lookingAway) {
@@ -159,6 +159,7 @@ val GazeLoop: State = state {
                     furhat.attend(furhat.users.current)
                 }
             //}
+            delay((postWait*1000).toLong())
         }
     }
 
