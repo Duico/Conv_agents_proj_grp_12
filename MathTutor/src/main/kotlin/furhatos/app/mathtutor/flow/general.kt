@@ -14,6 +14,8 @@ import java.time.Instant
 import java.util.*
 import kotlin.random.Random
 
+const val DISABLE_GAZE = true
+
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
 const val DELAY_TIME = 10L
@@ -94,7 +96,6 @@ enum class CurrentGazeStates {
 val GazeLoop: State = state {
     var attendBusy = false
     var lookingAway = false
-
 
     fun Furhat.gazeFromSample(tr: TriggerRunner<*>, sample: BooleanArray?) {
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
