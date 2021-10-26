@@ -28,8 +28,10 @@ fun timeLeft(): Boolean {
 val Greeting : State = state(Interaction) {
 
     onEntry {
-        parallel(abortOnExit = false){
-            goto(GazeLoop)
+        if(!DISABLE_GAZE) {
+            parallel(abortOnExit = false) {
+                goto(GazeLoop)
+            }
         }
         send(OnStartTalking())
         entryTime = Instant.now()
