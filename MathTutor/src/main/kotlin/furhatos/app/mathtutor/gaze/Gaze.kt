@@ -13,7 +13,7 @@ fun getRandomLocation(): Location {
         x = -x
     }
     val y = Random.nextDouble(-0.5, 0.2) // Random double between -0.5 and 0.5
-    return Location(x, y, 3.0)
+    return Location(x*0.8, y, 3.0)
 }
 
 class Gaze(type: String) {
