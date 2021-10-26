@@ -1,5 +1,6 @@
 package furhatos.app.mathtutor.flow
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import furhatos.app.mathtutor.gaze.Gaze
 import furhatos.app.mathtutor.gaze.getRandomLocation
 import furhatos.event.Event
@@ -94,6 +95,13 @@ enum class CurrentGazeStates {
 val GazeLoop: State = state {
     var attendBusy = false
     var lookingAway = false
+    var lookingAwayWithPriority = false
+
+    fun setLookingAway(isLookingAway: Boolean, priority: Boolean = false){
+        lookingAway = isLookingAway
+        if(!isLookingAway || priority)
+            lookingAwayWithPriority = isLookingAway
+    }
 
     fun Furhat.gazeFromSample(tr: TriggerRunner<*>, sample: BooleanArray?) {
         if (sample != null) { // Do nothing if, for some reason, the resource file cannot be found
@@ -101,15 +109,15 @@ val GazeLoop: State = state {
             for (gazeState in sample) {
                 // Sample data is in 10ms buckets, so this loop should only run at that frequency
                     if (!gazeState) { // Check if we should be looking away (!gazeState)                            lookingAway = true
-                        if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
+                        if (!lookingAwayWithPriority) { // Only find a new spot to look at if furhat is currently looking at the user
                             // Get some random spot to look at
                             val absoluteLocation = Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z)
                             attend(absoluteLocation)
-                            lookingAway = true
+                            setLookingAway(true, true)
                         }
                     } else {
                         attend(users.current)
-                        lookingAway = false
+                        setLookingAway(false)
                     }
                 tr.delay(DELAY_TIME)
                 //}
@@ -126,7 +134,7 @@ val GazeLoop: State = state {
         val sample = startSpeakingGaze.getRandomSample()
         furhat.gazeFromSample(this, sample)
         furhat.attend(users.current)
-        lookingAway = false
+        setLookingAway(false)
         send(OnSpeaking())
     }
 
@@ -134,7 +142,7 @@ val GazeLoop: State = state {
         val sample = interruptionGaze.getRandomSample()
         furhat.gazeFromSample(this, sample)
         furhat.attend(users.current)
-        lookingAway = false
+        setLookingAway(false)
         send(OnSpeaking())
     }
 
@@ -152,10 +160,10 @@ val GazeLoop: State = state {
             }
             //if (Duration.between(Instant.now(), timeLastGazed).seconds > wait) {
                 if (!lookingAway) {
-                    lookingAway = true
+                    setLookingAway(true)
                     furhat.attend(Location(getRandomLocation().x*0.3, getRandomLocation().y*0.3, getRandomLocation().z))
                 } else {
-                    lookingAway = false
+                    setLookingAway(true)
                     furhat.attend(furhat.users.current)
                 }
             //}
