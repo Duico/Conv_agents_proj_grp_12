@@ -12,6 +12,8 @@ import java.time.LocalDateTime
 import java.util.*
 import kotlin.random.Random
 
+const DISABLE_GAZE = false
+
 val interruptionGaze: Gaze = Gaze("/interrupted.txt")
 val startSpeakingGaze: Gaze = Gaze("/start_speaking.txt")
 const val DELAY_TIME = 10L * 1000000L
@@ -109,11 +111,15 @@ val GazeLoop: State = state {
                         if (!lookingAway) { // Only find a new spot to look at if furhat is currently looking at the user
                             // Get some random spot to look at
                             val absoluteLocation = getRandomLocation()
-                            attend(absoluteLocation)
+                            if (!DISABLE_GAZE) {
+                                attend(absoluteLocation)
+                            }
                             lookingAway = true
                         }
                     } else {
-                        attend(users.current)
+                        if (!DISABLE_GAZE) {
+                            attend(users.current)
+                        }
                     }
                 }
             }
@@ -128,7 +134,9 @@ val GazeLoop: State = state {
         currentGazeState = CurrentGazeStates.START_SPEAKING
         val sample = startSpeakingGaze.getRandomSample()
         furhat.gazeFromSample(sample)
-        furhat.attend(users.current)
+        if (!DISABLE_GAZE) {
+            furhat.attend(users.current)
+        }
         send(OnSpeaking())
     }
 
@@ -136,7 +144,9 @@ val GazeLoop: State = state {
         currentGazeState = CurrentGazeStates.INTERRUPT
         val sample = interruptionGaze.getRandomSample()
         furhat.gazeFromSample(sample)
-        furhat.attend(users.current)
+        if (!DISABLE_GAZE) {
+            furhat.attend(users.current)
+        }
         send(OnSpeaking())
     }
 
@@ -152,10 +162,14 @@ val GazeLoop: State = state {
                 timeLastGazed = LocalDateTime.now()
                 if (lookingAtSpeaker) {
                     lookingAtSpeaker = false
-                    furhat.attend(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z))
+                    if (!DISABLE_GAZE) {
+                        furhat.attend(Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z))
+                    }
                 } else {
                     lookingAtSpeaker = true
-                    furhat.attend(furhat.users.current)
+                    if (!DISABLE_GAZE) {
+                        furhat.attend(furhat.users.current)
+                    }
                 }
             }
         }
