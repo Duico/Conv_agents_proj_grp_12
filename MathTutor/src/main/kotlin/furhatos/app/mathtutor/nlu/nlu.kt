@@ -9,7 +9,6 @@ import furhatos.nlu.common.Number
 import furhatos.nlu.grammar.Grammar
 import furhatos.nlu.kotlin.grammar
 import furhatos.util.Language
-import net.didion.jwnl.data.Verb
 
 class RepeatQuestion : Intent() {
     override fun getExamples(lang: Language): List<String> {
@@ -38,7 +37,7 @@ class VerbalAddition(override var operation: Operation = Operation.ADDITION) : V
 class VerbalSubtraction (override var operation: Operation = Operation.SUBTRACTION) : VerbalOperationIntent(operation){
     override fun getExamples(lang: Language): List<String> {
         return listOf("subtracting", "difference",
-            "subtract", "subtraction", "minus"
+            "subtract", "subtraction", "minus","substraction"
         )
     }
 }
