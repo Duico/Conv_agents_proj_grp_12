@@ -111,7 +111,7 @@ val GazeLoop: State = state {
                     if (!gazeState) { // Check if we should be looking away (!gazeState)                            lookingAway = true
                         if (!lookingAwayWithPriority) { // Only find a new spot to look at if furhat is currently looking at the user
                             // Get some random spot to look at
-                            val absoluteLocation = Location(getRandomLocation().x*0.5, getRandomLocation().y*0.5, getRandomLocation().z)
+                            val absoluteLocation = Location(getRandomLocation().x, getRandomLocation().y, getRandomLocation().z)
                             attend(absoluteLocation)
                             setLookingAway(true, true)
                         }
