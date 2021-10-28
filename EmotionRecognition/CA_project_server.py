@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 hostName = "localhost"
 serverPort = 9999
 count = 0
+time_series_emotion = []
 
 
 # In[3]:
@@ -30,10 +31,27 @@ cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1500)
 
 
 class MyServer(BaseHTTPRequestHandler):
+    aggregate_emo = "neutral"
     def do_GET(self):
+        global time_series_emotion
         emotion = detectEmotion()
-        print(emotion)
-        self.send_response(200,emotion)
+        if(len(time_series_emotion) == 0 and emotion != []):
+            time_series_emotion = emotion
+
+        elif(len(emotion) != 0):
+            for key in time_series_emotion.keys():
+                time_series_emotion[key] = 0.9 * emotion[key] + 0.1 * time_series_emotion[key]
+        
+        if(len(time_series_emotion) != 0):
+            dict_emo = list(time_series_emotion.keys())
+            aggregate_emo = dict_emo[0]
+            aggregate_val = time_series_emotion[aggregate_emo]
+            for key in time_series_emotion.keys():
+                temp = time_series_emotion[key]
+                if(temp > aggregate_val):
+                    aggregate_val = temp
+                    aggregate_emo = key
+        self.send_response(200,aggregate_emo)
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(bytes("<html><head><title>https://pythonbasics.org</title></head>", "utf-8"))
@@ -47,7 +65,6 @@ class MyServer(BaseHTTPRequestHandler):
 
 
 def detectEmotion():
-    detectedEmo = "" 
     ret, img = cam.read()    ## predict yolo
     image_context = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     emo = emotion(image_context)
@@ -63,20 +80,30 @@ def emotion(image):
     image_one = image
     detector = FER(mtcnn=True)
     # Capture all the emotions on the image
-    plt.imshow(image_one)
+    #plt.imshow(image_one)
     dominant_emotion, emotion_score = detector.top_emotion(image_one)
     emotions = detector.detect_emotions(image_one)
-    return dominant_emotion
+    if(len(emotions) == 0):
+        return []
+    return emotions[0]["emotions"] #dominant_emotion
 
 
 # In[7]:
 
 
 emo = detectEmotion()
-print(emo)
+if(len(time_series_emotion) == 0):
+            time_series_emotion = emo
+
+elif(len(emo)!= 0):
+    for key in time_series_emotion.keys():
+        time_series_emotion[key] = 0.9 * emo[key] + 0.1 * time_series_emotion[key]
+else:
+    pass
+    
 
 
-# In[ ]:
+# In[8]:
 
 
 webServer = HTTPServer((hostName, serverPort), MyServer)
