@@ -218,7 +218,7 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
             }
         }
         else{
-            furhat.say("Hummmmm...")
+            furhat.say("Hummm...")
             furhat.say("Unfortunately, that's not the right answer. I think it'd be a good idea to understand the concept better")
             goto(DetailedExplanation(operation))
         }
@@ -253,6 +253,8 @@ fun DetailedExplanation(operation: Operation) :State = state(Interaction){
                 delay(3000)
                 furhat.say("Let's count the number of fingers now")
                 delay(2000)
+
+                send(OnListening())
                 furhat.say("You have..")
                 for( i in 1..num1+num2){
                     furhat.say(i.toString())
@@ -652,7 +654,7 @@ val EvaluateConditions:State = state(Interaction){
     onEntry{
         send(OnStartTalking())
         var emotion = detectEmotion()
-        if(timeLeft() && (emotion == "happy" || emotion =="neutral" || emotion == "surprise")){ //TODO add emotion == ??
+        if(timeLeft() && (emotion == "happy" || emotion =="neutral" || emotion == "surprise")){
             var learnMore = furhat.askYN("Looks like we still have some time left plus you seem confident and happy. Would you like to learn a new concept?")
             if(learnMore == true){
                 goto(GetOperationSecond)
