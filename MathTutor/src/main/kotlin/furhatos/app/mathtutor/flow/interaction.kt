@@ -4,6 +4,7 @@ import furhatos.app.mathtutor.nlu.*
 import furhatos.nlu.common.*
 import furhatos.flow.kotlin.*
 import furhatos.nlu.common.Number
+import kotlinx.coroutines.delay
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Duration
@@ -16,6 +17,16 @@ var entryTime : Instant = Instant.now()
 
 var binaryOpNum1: Int? = null
 var binaryOpNum2: Int? = null
+
+
+class SimpleThread: Thread(){
+    public override fun run() {
+        while(true){
+            detectEmotion()
+            sleep(15000)
+        }
+    }
+}
 
 fun detectEmotion(): String {
     val url = URL("http://localhost:9999/detect")
@@ -35,6 +46,10 @@ fun timeLeft(): Boolean {
 val Greeting : State = state(Interaction) {
 
     onEntry {
+        val thr = SimpleThread()
+        println("starting thread now")
+        print("starting thread")
+        thr.start()
         send(OnStartTalking())
         entryTime = Instant.now()
         furhat.say("Hello. I'm MathTutor, your AI math teacher.")
@@ -315,6 +330,9 @@ fun GaugeDetailedExplanation(operation:Operation) = state(Interaction){
 
 fun Encouragement(operation: Operation) = state(Interaction){
     onEntry{
+        if(operation == Operation.MULTIPLICATION){
+
+        }
         random({furhat.say("I understand that you aren't very happy with your performance today")},
             {furhat.say("Don't worry though! Through practice, you will definitely master the concepts!")})
         var emotion = detectEmotion()
