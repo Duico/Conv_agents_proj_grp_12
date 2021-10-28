@@ -47,9 +47,8 @@ val Greeting : State = state(Interaction) {
 
     onEntry {
         val thr = SimpleThread()
-        println("starting thread now")
-        print("starting thread")
         thr.start()
+
         send(OnStartTalking())
         entryTime = Instant.now()
         furhat.say("Hello. I'm MathTutor, your AI math teacher.")
@@ -223,8 +222,12 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
             goto(DetailedExplanation(operation))
         }
     }
-    onResponse{
+    onResponse<RepeatQuestion>{
         reentry()
+    }
+    onResponse{
+        furhat.say("Let's see how to solve this")
+        goto(DetailedExplanation(operation))
     }
 
 }
