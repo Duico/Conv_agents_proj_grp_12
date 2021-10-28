@@ -117,7 +117,9 @@ val GazeLoop: State = state {
                             lookingAway = true
                         }
                     } else {
-                        attend(users.current)
+                        if (!DISABLE_GAZE) {
+                            attend(users.current)
+                        }
                     }
                 }
             }
