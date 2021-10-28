@@ -52,6 +52,10 @@ val Interaction: State = state {
         val logFile = File("logs/log-${UUID.randomUUID()}.log")
         logFile.createNewFile()
         flowLogger.start(logFile) //Start the logger
+        parallel(abortOnExit = false){
+            goto(GazeLoop)
+        }
+
     }
     onUserLeave(instant = true) {
         if (users.count > 0) {
