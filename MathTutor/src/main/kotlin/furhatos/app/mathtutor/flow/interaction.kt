@@ -37,6 +37,15 @@ fun detectEmotion(): String {
     }
 }
 
+fun detectSentiment(userResponse:String):String{
+    val url = URL("http://localhost:9998/"+userResponse)
+    with(url.openConnection() as HttpURLConnection) {
+        requestMethod = "GET"  // optional default is GET
+        //print("\nSent 'GET' request to URL : $url; Response Code : $responseCode")
+        return responseMessage
+    }
+}
+
 fun timeLeft(): Boolean {
     var currTime = Instant.now()
     print("Duration (sec): "+Duration.between(entryTime, currTime).seconds)
@@ -226,7 +235,19 @@ fun GaugeBriefExplanation(operation : Operation) = state(Interaction) {
         reentry()
     }
     onResponse{
-        furhat.say("Let's see how to solve this")
+        var origResponse = it.text
+        var modifiedResponse = origResponse.replace(" ","_")
+        var sentiment = detectSentiment(modifiedResponse)
+        print(sentiment)
+        if(sentiment == "pos"){
+            furhat.say("You seem enthusiastic! Let's see the solution")
+        }
+        else if(sentiment == "neu"){
+            furhat.say("You seem alright. Let's see the solution")
+        }
+        else{
+            furhat.say("You don't seem fine. Let's see the solution anyway")
+        }
         goto(DetailedExplanation(operation))
     }
 
@@ -411,6 +432,19 @@ fun MediumProblem(operation: Operation) = state(Interaction){
         reentry()
     }
     onResponse{
+        var origResponse = it.text
+        var modifiedResponse = origResponse.replace(" ","_")
+        var sentiment = detectSentiment(modifiedResponse)
+        print(sentiment)
+        if(sentiment == "pos"){
+            furhat.say("You seem enthusiastic! Let's see the solution")
+        }
+        else if(sentiment == "neu"){
+            furhat.say("You seem alright. Let's see the solution")
+        }
+        else{
+            furhat.say("You don't seem fine. Let's see the solution anyway")
+        }
         goto(MediumProblemSolution(operation, num1, num2))
     }
 
@@ -486,6 +520,19 @@ fun DifficultProblem(operation:Operation) : State = state(Interaction){
         reentry()
     }
     onResponse{
+        var origResponse = it.text
+        var modifiedResponse = origResponse.replace(" ","_")
+        var sentiment = detectSentiment(modifiedResponse)
+        print(sentiment)
+        if(sentiment == "pos"){
+            furhat.say("You seem enthusiastic! Let's see the solution")
+        }
+        else if(sentiment == "neu"){
+            furhat.say("You seem alright. Let's see the solution")
+        }
+        else{
+            furhat.say("You don't seem fine. Let's see the solution anyway")
+        }
         goto(DifficultProblemSolution(operation, num1, num2, num3))
     }
 }
@@ -649,6 +696,19 @@ fun EasyProblem(operation:Operation) :State = state(Interaction){
         reentry()
     }
     onResponse{
+        var origResponse = it.text
+        var modifiedResponse = origResponse.replace(" ","_")
+        var sentiment = detectSentiment(modifiedResponse)
+        print(sentiment)
+        if(sentiment == "pos"){
+            furhat.say("You seem enthusiastic! Let's see the solution")
+        }
+        else if(sentiment == "neu"){
+            furhat.say("You seem alright. Let's see the solution")
+        }
+        else{
+            furhat.say("You don't seem fine. Let's see the solution anyway")
+        }
         goto(DetailedExplanation(operation))
     }
 }
